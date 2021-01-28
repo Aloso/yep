@@ -60,34 +60,26 @@ impl FancyFormat for Name {
             Name::Type(x) => x.fmt(buf, indent, interner),
         }
     }
-    fn is_single_line(&self) -> bool {
-        true
-    }
+    fn is_single_line(&self) -> bool { true }
 }
 
 impl FancyFormat for Operator {
     fn fmt_impl(&self, buf: &mut String, indent: usize, interner: &StringInterner) {
         self.lookup(interner).unwrap().fmt(buf, indent, interner);
     }
-    fn is_single_line(&self) -> bool {
-        true
-    }
+    fn is_single_line(&self) -> bool { true }
 }
 impl FancyFormat for Ident {
     fn fmt_impl(&self, buf: &mut String, indent: usize, interner: &StringInterner) {
         self.lookup(interner).unwrap().fmt(buf, indent, interner);
     }
-    fn is_single_line(&self) -> bool {
-        true
-    }
+    fn is_single_line(&self) -> bool { true }
 }
 impl FancyFormat for UpperIdent {
     fn fmt_impl(&self, buf: &mut String, indent: usize, interner: &StringInterner) {
         self.lookup(interner).unwrap().fmt(buf, indent, interner);
     }
-    fn is_single_line(&self) -> bool {
-        true
-    }
+    fn is_single_line(&self) -> bool { true }
 }
 
 impl FancyFormat for GenericParam {
@@ -102,9 +94,7 @@ impl FancyFormat for GenericParam {
             .fmt(buf, indent, interner)
         }
     }
-    fn is_single_line(&self) -> bool {
-        self.bounds.is_empty()
-    }
+    fn is_single_line(&self) -> bool { self.bounds.is_empty() }
 }
 
 impl FancyFormat for TypeBound {
@@ -136,9 +126,7 @@ impl FancyFormat for NamedType {
             .fmt(buf, indent, interner)
         }
     }
-    fn is_single_line(&self) -> bool {
-        self.args.is_empty()
-    }
+    fn is_single_line(&self) -> bool { self.args.is_empty() }
 }
 
 impl FancyFormat for TypeArgument {
@@ -210,9 +198,7 @@ impl FancyFormat for Invokable {
             .fmt(buf, indent, interner)
         }
     }
-    fn is_single_line(&self) -> bool {
-        self.generics.is_empty()
-    }
+    fn is_single_line(&self) -> bool { self.generics.is_empty() }
 }
 
 impl FancyFormat for Literal {
@@ -221,9 +207,7 @@ impl FancyFormat for Literal {
             Literal::NumberLit(x) => x.fmt(buf, indent, interner),
         }
     }
-    fn is_single_line(&self) -> bool {
-        true
-    }
+    fn is_single_line(&self) -> bool { true }
 }
 
 impl FancyFormat for NumberLiteral {
@@ -234,9 +218,7 @@ impl FancyFormat for NumberLiteral {
             NumberLiteral::Float(x) => buf.push_str(&format!("Float: {}", x)),
         }
     }
-    fn is_single_line(&self) -> bool {
-        true
-    }
+    fn is_single_line(&self) -> bool { true }
 }
 
 impl FancyFormat for ParenCall {
@@ -298,9 +280,7 @@ impl FancyFormat for ScOperator {
             ScOperator::Or => buf.push_str("Or"),
         }
     }
-    fn is_single_line(&self) -> bool {
-        true
-    }
+    fn is_single_line(&self) -> bool { true }
 }
 
 impl FancyFormat for Assignment {
@@ -359,9 +339,7 @@ impl FancyFormat for Empty {
     fn fmt_impl(&self, buf: &mut String, _indent: usize, _interner: &StringInterner) {
         buf.push_str("Empty");
     }
-    fn is_single_line(&self) -> bool {
-        true
-    }
+    fn is_single_line(&self) -> bool { true }
 }
 
 impl FancyFormat for Declaration {
@@ -383,9 +361,7 @@ impl FancyFormat for DeclKind {
         }
     }
 
-    fn is_single_line(&self) -> bool {
-        true
-    }
+    fn is_single_line(&self) -> bool { true }
 }
 
 impl FancyFormat for Case {

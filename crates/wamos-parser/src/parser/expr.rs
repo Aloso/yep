@@ -8,7 +8,7 @@ use super::items::*;
 use super::patterns::Pattern;
 use super::{Error, LexerMut, Parse, ParseResult};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Expr {
     Invokable(Invokable),
     Literal(Literal),
@@ -28,30 +28,30 @@ pub enum Expr {
     Case(Case),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Invokable {
     pub name: Name,
     pub generics: Vec<TypeArgument>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Literal {
     NumberLit(NumberLiteral),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ParenCall {
     pub receiver: Box<Expr>,
     pub args: Option<Vec<FunCallArgument>>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct MemberCall {
     pub receiver: Box<Expr>,
     pub member: Invokable,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Operation {
     pub operator: Operator,
     pub lhs: Box<Expr>,
@@ -59,14 +59,14 @@ pub struct Operation {
 }
 
 /// Short-circuiting
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ScOperation {
     pub operator: ScOperator,
     pub lhs: Box<Expr>,
     pub rhs: Box<Expr>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Assignment {
     pub lhs: Box<Expr>,
     pub rhs: Box<Expr>,
@@ -79,63 +79,63 @@ pub enum ScOperator {
     Or,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TypeAscription {
     pub expr: Box<Expr>,
     pub ty: NamedType,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Lambda {
     pub args: Vec<LambdaArgument>,
     pub body: Box<Expr>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Block {
     pub exprs: Vec<Expr>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Parens {
     pub exprs: Vec<FunCallArgument>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Empty;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Declaration {
     pub decl_kind: DeclKind,
     pub name: Ident,
     pub value: Box<Expr>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Case {
     pub expr: Box<Expr>,
     pub match_arms: Vec<MatchArm>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct FunCallArgument {
     pub name: Option<Ident>,
     pub expr: Expr,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum DeclKind {
     Let,
     Var,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct LambdaArgument {
     pub name: Ident,
     pub ty: Option<NamedType>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct MatchArm {
     pub pattern: Pattern,
     pub expr: Expr,
@@ -172,12 +172,9 @@ impl Parse for Expr {
 }
 
 #[rustfmt::skip]
-macro_rules! invokable {
-    ($s:ident) => {
-        ExprPart::Invokable(Invokable { name: Name::$s(_), .. })
-    };
-    (Expr, $s:ident) => {
-        Expr::Invokable(Invokable { name: Name::$s(_), .. })
+macro_rules! invk {
+    ($s:ident($p:pat)) => {
+        Invokable { name: Name::$s($p), .. }
     };
 }
 
@@ -188,7 +185,7 @@ fn pratt_parser(
 ) -> Result<Expr, Error> {
     fn postfix_binding_power(op: &ExprPart) -> Option<(u8, ())> {
         match op {
-            invokable!(Type) => Some((11, ())),
+            ExprPart::Invokable(invk!(Type(_))) => Some((11, ())),
             ExprPart::Parens(_) => Some((9, ())),
             _ => None,
         }
@@ -197,7 +194,7 @@ fn pratt_parser(
     fn infix_binding_power(op: &ExprPart) -> Option<(u8, u8)> {
         match op {
             ExprPart::Dot => Some((13, 14)),
-            invokable!(Operator) => Some((7, 8)),
+            ExprPart::Invokable(invk!(Operator(_))) => Some((7, 8)),
             ExprPart::And => Some((5, 6)),
             ExprPart::Or => Some((3, 4)),
             ExprPart::Equals => Some((2, 1)),
@@ -428,7 +425,7 @@ impl Parse for UpperIdent {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub(super) enum ExprPart {
     Literal(Literal),
     Invokable(Invokable),
@@ -485,41 +482,52 @@ impl ExprPart {
         match self {
             ExprPart::Parens(_) | ExprPart::Dot | ExprPart::Equals => Ok(()),
 
-            #[rustfmt::skip]
-            ExprPart::Invokable(Invokable { name: Name::Operator(_), .. })
-            | ExprPart::Invokable(Invokable { name: Name::Type(_), .. })
+            ExprPart::Invokable(invk!(Operator(_)))
+            | ExprPart::Invokable(invk!(Type(_)))
             | ExprPart::And
-            | ExprPart::Or => match lhs {
-                invokable!(Expr, Operator) => Err(todo!()),
-                _ => Ok(()),
-            },
+            | ExprPart::Or => validate_operand(lhs),
 
-            invokable!(Ident) | ExprPart::Lambda(_) | ExprPart::Block(_) | ExprPart::Literal(_) => {
-                Err(todo!())
+            ExprPart::Invokable(i @ invk!(Ident(_))) => {
+                Err(Error::ExpectedGot3("operator", Expr::Invokable(i.clone())))
             }
+
+            ExprPart::Lambda(l) => Err(Error::ExpectedGot3("operator", Expr::Lambda(l.clone()))),
+
+            ExprPart::Block(b) => Err(Error::ExpectedGot3("operator", Expr::Block(b.clone()))),
+
+            ExprPart::Literal(l) => Err(Error::ExpectedGot3("operator", Expr::Literal(l.clone()))),
         }
     }
 
     fn into_operation(self, lhs: Expr, rhs: Expr) -> Result<Expr, Error> {
         Ok(match self {
-            ExprPart::Invokable(Invokable {
-                name: Name::Operator(operator),
-                ..
-            }) => Expr::Operation(Operation {
-                operator,
-                lhs: Box::new(lhs),
-                rhs: Box::new(rhs),
-            }),
-            ExprPart::And => Expr::ShortcircuitingOp(ScOperation {
-                operator: ScOperator::And,
-                lhs: Box::new(lhs),
-                rhs: Box::new(rhs),
-            }),
-            ExprPart::Or => Expr::ShortcircuitingOp(ScOperation {
-                operator: ScOperator::Or,
-                lhs: Box::new(lhs),
-                rhs: Box::new(rhs),
-            }),
+            ExprPart::Invokable(invk!(Operator(operator))) => {
+                validate_operand(&lhs)?;
+                validate_operand(&rhs)?;
+                Expr::Operation(Operation {
+                    operator,
+                    lhs: Box::new(lhs),
+                    rhs: Box::new(rhs),
+                })
+            }
+            ExprPart::And => {
+                validate_operand(&lhs)?;
+                validate_operand(&rhs)?;
+                Expr::ShortcircuitingOp(ScOperation {
+                    operator: ScOperator::And,
+                    lhs: Box::new(lhs),
+                    rhs: Box::new(rhs),
+                })
+            }
+            ExprPart::Or => {
+                validate_operand(&lhs)?;
+                validate_operand(&rhs)?;
+                Expr::ShortcircuitingOp(ScOperation {
+                    operator: ScOperator::Or,
+                    lhs: Box::new(lhs),
+                    rhs: Box::new(rhs),
+                })
+            }
             ExprPart::Dot => Expr::MemberCall(MemberCall {
                 member: match rhs {
                     Expr::Invokable(i) => i,
@@ -527,11 +535,34 @@ impl ExprPart {
                 },
                 receiver: Box::new(lhs),
             }),
-            ExprPart::Equals => Expr::Assignment(Assignment {
-                lhs: Box::new(lhs),
-                rhs: Box::new(rhs),
-            }),
+            ExprPart::Equals => {
+                validate_operand(&lhs)?;
+                Expr::Assignment(Assignment {
+                    lhs: Box::new(lhs),
+                    rhs: Box::new(rhs),
+                })
+            }
             _ => return Err(todo!()),
         })
+    }
+}
+
+impl Expr {
+    fn to_operator(&self) -> Option<Operator> {
+        match *self {
+            Expr::Invokable(Invokable {
+                name: Name::Operator(o),
+                ..
+            }) => Some(o),
+            _ => None,
+        }
+    }
+}
+
+fn validate_operand(expr: &Expr) -> Result<(), Error> {
+    if let Some(op) = expr.to_operator() {
+        Err(Error::OperatorInsteadOfOperand(op))
+    } else {
+        Ok(())
     }
 }

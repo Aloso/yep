@@ -124,13 +124,13 @@ impl Parse for TypeArgument {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct NamedType {
     pub name: UpperIdent,
     pub args: Vec<TypeArgument>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum TypeArgument {
     Type(NamedType),
     Wildcard,

@@ -1,7 +1,7 @@
-use crate::lexer::{LexError, LifelessToken, Token, TokenData};
+use crate::lexer::{LifelessToken, Operator, Token, TokenData};
 
 pub use self::formatting::FancyFormat;
-use self::items::Item;
+use self::{expr::Expr, items::Item};
 
 mod expr;
 mod formatting;
@@ -86,9 +86,6 @@ pub fn parse(tokens: &[Token]) -> Result<Vec<Item>, Error> {
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error("Invalid character: {0:?}")]
-    LexErrors(Vec<LexError>),
-
     #[error("There are remaining tokens that could not be parsed: {0:?}")]
     RemainingTokens(Vec<LifelessToken>),
 
@@ -100,6 +97,14 @@ pub enum Error {
 
     #[error("Expected {0}, got {1:?}")]
     ExpectedGot2(&'static str, TokenData),
+
+    #[error("Expected {0}, got {1:?}")]
+    ExpectedGot3(&'static str, Expr),
+
+    #[error(
+        "Operators are not allowed here: {0:?}\n  tip: Wrap the operator in braces, e.g. `{{+}}`"
+    )]
+    OperatorInsteadOfOperand(Operator),
 }
 
 trait Parse: Sized {
