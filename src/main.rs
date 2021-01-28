@@ -5,6 +5,7 @@ use wamos_parser::StringInterner;
 const BLUE: &str = "\x1b[38;2;50;220;255m";
 const GREEN: &str = "\x1b[38;2;80;230;100m";
 const YELLOW: &str = "\x1b[38;2;255;235;0m";
+const ORANGE: &str = "\x1b[38;2;255;135;0m";
 const RED: &str = "\x1b[38;2;255;40;40m";
 const PURPLE: &str = "\x1b[38;2;255;70;255m";
 const GRAY: &str = "\x1b[38;2;130;130;130m";
@@ -56,6 +57,7 @@ fn print_program(program: &Program) {
         match k.kind() {
             TokenKind::Punct => print!("{}", GRAY),
             TokenKind::NumberLit => print!("{}", YELLOW),
+            TokenKind::StringLit => print!("{}", ORANGE),
             TokenKind::Ident => print!("{}{}", RESET, BOLD),
             TokenKind::UpperIdent => print!("{}", GREEN),
             TokenKind::Operator => print!("{}", PURPLE),

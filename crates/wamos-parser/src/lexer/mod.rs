@@ -7,7 +7,7 @@ use std::fmt;
 
 use string_interner::StringInterner;
 
-pub use idents::{Ident, Operator, UpperIdent};
+pub use idents::{Ident, Operator, StringLiteral, UpperIdent};
 pub use numbers::NumberLiteral;
 pub use syntax::{Keyword, Punctuation};
 pub use tokens::{LexError, LifelessToken, Token, TokenData, TokenKind};

@@ -1,7 +1,8 @@
 use std::iter::Peekable;
 
 use crate::lexer::{
-    Ident, Keyword, NumberLiteral, Operator, Punctuation, TokenData, UpperIdent,
+    Ident, Keyword, NumberLiteral, Operator, Punctuation, StringLiteral, TokenData,
+    UpperIdent,
 };
 use crate::uoret;
 
@@ -39,6 +40,7 @@ pub struct Invokable {
 #[derive(Debug, Clone)]
 pub enum Literal {
     NumberLit(NumberLiteral),
+    StringLit(StringLiteral),
 }
 
 #[derive(Debug, Clone)]
@@ -257,7 +259,10 @@ fn pratt_parser(
 
 impl Parse for Literal {
     fn parse(lexer: LexerMut) -> ParseResult<Self> {
-        Ok(NumberLiteral::parse(lexer)?.map(Literal::NumberLit))
+        or2(
+            map(NumberLiteral::parse, Literal::NumberLit),
+            map(StringLiteral::parse, Literal::StringLit),
+        )(lexer)
     }
 }
 
@@ -382,6 +387,18 @@ impl Parse for FunCallArgument {
         }
 
         or2(parse_with_name, map(Expr::parse, wrap_expr))(lexer)
+    }
+}
+
+impl Parse for StringLiteral {
+    fn parse(lexer: LexerMut) -> ParseResult<Self> {
+        Ok(match lexer.peek().data() {
+            TokenData::StringLit(s) => {
+                lexer.next();
+                Some(s)
+            }
+            _ => None,
+        })
     }
 }
 

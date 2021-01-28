@@ -31,6 +31,10 @@ pub struct Operator(DefaultSymbol);
 #[derive(Copy, Clone, Eq, PartialEq, Hash)]
 pub struct UpperIdent(DefaultSymbol);
 
+#[derive(Copy, Clone, Eq, PartialEq, Hash)]
+pub struct StringLiteral(DefaultSymbol);
+
+
 impl Ident {
     pub(crate) fn new(string: &str, interner: &mut StringInterner) -> Self {
         Self(interner.get_or_intern(string))
@@ -52,6 +56,16 @@ impl Operator {
 }
 
 impl UpperIdent {
+    pub(crate) fn new(string: &str, interner: &mut StringInterner) -> Self {
+        Self(interner.get_or_intern(string))
+    }
+
+    pub(crate) fn lookup<'a>(&self, interner: &'a StringInterner) -> Option<&'a str> {
+        interner.resolve(self.0)
+    }
+}
+
+impl StringLiteral {
     pub(crate) fn new(string: &str, interner: &mut StringInterner) -> Self {
         Self(interner.get_or_intern(string))
     }
@@ -84,5 +98,11 @@ impl fmt::Debug for UpperIdent {
 impl fmt::Debug for Operator {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Operator #{}", get_value!(self.0))
+    }
+}
+
+impl fmt::Debug for StringLiteral {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "StringLit #{}", get_value!(self.0))
     }
 }

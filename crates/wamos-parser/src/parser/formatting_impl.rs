@@ -1,6 +1,6 @@
 use string_interner::StringInterner;
 
-use crate::lexer::{Ident, Operator, UpperIdent};
+use crate::lexer::{Ident, Operator, StringLiteral, UpperIdent};
 use crate::{key_values, lexer::NumberLiteral};
 
 use super::expr::*;
@@ -205,6 +205,7 @@ impl FancyFormat for Literal {
     fn fmt_impl(&self, buf: &mut String, indent: usize, interner: &StringInterner) {
         match self {
             Literal::NumberLit(x) => x.fmt(buf, indent, interner),
+            Literal::StringLit(x) => x.fmt(buf, indent, interner),
         }
     }
     fn is_single_line(&self) -> bool { true }
@@ -217,6 +218,14 @@ impl FancyFormat for NumberLiteral {
             NumberLiteral::UInt(x) => buf.push_str(&format!("UInt: {}", x)),
             NumberLiteral::Float(x) => buf.push_str(&format!("Float: {}", x)),
         }
+    }
+    fn is_single_line(&self) -> bool { true }
+}
+
+impl FancyFormat for StringLiteral {
+    fn fmt_impl(&self, buf: &mut String, _indent: usize, interner: &StringInterner) {
+        buf.push_str("String: ");
+        buf.push_str(self.lookup(interner).unwrap());
     }
     fn is_single_line(&self) -> bool { true }
 }

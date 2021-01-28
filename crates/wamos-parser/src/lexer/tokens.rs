@@ -3,7 +3,10 @@ use std::{fmt, marker::PhantomData, ops::Range};
 use logos::Lexer;
 use string_interner::StringInterner;
 
-use super::syntax::{parse_keyword, IToken};
+use super::{
+    idents::StringLiteral,
+    syntax::{parse_keyword, IToken},
+};
 use super::{numbers, Ident, Keyword, NumberLiteral, Operator, Punctuation, UpperIdent};
 
 #[derive(Clone)]
@@ -33,6 +36,7 @@ impl LifelessToken {
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum TokenData {
     Punct(Punctuation),
+    StringLit(StringLiteral),
     NumberLit(NumberLiteral),
     Ident(Ident),
     UpperIdent(UpperIdent),
@@ -60,6 +64,7 @@ impl<'a> Token<'a> {
     pub fn kind(&self) -> TokenKind {
         match self.data {
             TokenData::Punct(_) => TokenKind::Punct,
+            TokenData::StringLit(_) => TokenKind::StringLit,
             TokenData::NumberLit(_) => TokenKind::NumberLit,
             TokenData::Ident(_) => TokenKind::Ident,
             TokenData::UpperIdent(_) => TokenKind::UpperIdent,
@@ -85,6 +90,7 @@ impl<'a> Token<'a> {
             match &self.data {
                 TokenData::Punct(_) => write!(f, "`{}`", text),
                 TokenData::NumberLit(n) => write!(f, "{:?}@`{}`", n, text),
+                TokenData::StringLit(_) => write!(f, "s`{}`", text),
                 TokenData::Ident(_) => write!(f, "i`{}`", text),
                 TokenData::UpperIdent(_) => write!(f, "I`{}`", text),
                 TokenData::Operator(_) => write!(f, "o`{}`", text),
@@ -109,6 +115,7 @@ impl<'a> Token<'a> {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum TokenKind {
     Punct,
+    StringLit,
     NumberLit,
     Ident,
     UpperIdent,
@@ -160,6 +167,7 @@ pub(super) fn lex<'a>(text: &'a str, interner: &mut StringInterner) -> Vec<Token
                 }
             }
             IToken::NumberLit(input) => numbers::parse_number(input),
+            IToken::StringLit(s) => TokenData::StringLit(StringLiteral::new(s, interner)),
             IToken::Punct(p) => TokenData::Punct(p),
             IToken::Error => TokenData::Error(LexError::Unexpected),
             IToken::WS => TokenData::Error(LexError::WS),

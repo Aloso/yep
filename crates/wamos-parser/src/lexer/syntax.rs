@@ -32,6 +32,9 @@ pub(super) enum IToken<'a> {
     #[regex(r"\.\d[a-zA-Z_+\-*/%~<>=!0-9]*")]
     NumberLit(&'a str),
 
+    #[regex(r#""([^"\\]|\\.)*""#)]
+    StringLit(&'a str),
+
     #[regex(r"[a-zA-Z_+\-*/%~<>=!][a-zA-Z_+\-*/%~<>=!0-9]*", priority = 1)]
     Word(&'a str),
 
