@@ -120,7 +120,9 @@ impl<K: FancyFormat, V: FancyFormat> FancyFormat for FancyKV<K, V> {
         }
     }
 
-    fn is_single_line(&self) -> bool { self.0.is_single_line() && self.1.is_single_line() }
+    fn is_single_line(&self) -> bool {
+        self.0.is_single_line() && self.1.is_single_line()
+    }
 
     fn is_empty(&self) -> bool { self.0.is_single_line() && self.1.is_empty() }
 }
@@ -162,7 +164,9 @@ impl<T: FancyFormat> FancyFormat for Box<T> {
     }
 }
 
-pub(crate) fn dyn_list<'a>(items: &'a [&'a dyn FancyFormat]) -> FancyList<&'a dyn FancyFormat> {
+pub(crate) fn dyn_list<'a>(
+    items: &'a [&'a dyn FancyFormat],
+) -> FancyList<&'a dyn FancyFormat> {
     FancyList(items)
 }
 
@@ -191,10 +195,7 @@ fn test_formatting() {
     let empty_list = FancyList::<&str>(&[]);
 
     test(FancyKV("Foo", "Bar"), "Foo: Bar");
-    test(
-        FancyKV("Foo", FancyWrap("  Bar", str::trim, false)),
-        "Foo\n   Bar\n",
-    );
+    test(FancyKV("Foo", FancyWrap("  Bar", str::trim, false)), "Foo\n   Bar\n");
     test(FancyKV("Foo", empty_list), "");
     test(FancyKV("Foo", &short_list), "Foo\n   A\n   B\n");
     test(FancyKV("Foo", &short_list3), "Foo: E");
@@ -210,8 +211,5 @@ fn test_formatting() {
         FancyKV("Foo", FancyKV("Bar", FancyKV("Baz", short_list))),
         "Foo\n   Bar\n      Baz\n         A\n         B\n",
     );
-    test(
-        FancyKV("Foo", FancyKV("Bar", FancyKV("Baz", short_list3))),
-        "Foo: Bar: Baz: E",
-    );
+    test(FancyKV("Foo", FancyKV("Bar", FancyKV("Baz", short_list3))), "Foo: Bar: Baz: E");
 }

@@ -81,8 +81,7 @@ impl_int!(i8 u8 i16 u16 i32 u32 i64 u64 i128 u128);
 
 fn parse_int_digits<N: Int>(negative: bool, text: &str, radix: u32) -> Result<N> {
     let chars = text.chars().filter(|&c| c != '_').map(|c| {
-        c.to_digit(radix)
-            .with_context(|| format!("Illegal char {:?} in number", c))
+        c.to_digit(radix).with_context(|| format!("Illegal char {:?} in number", c))
     });
 
     let mut num = N::zero();
@@ -153,7 +152,11 @@ pub(crate) fn float(input: &str) -> Result<NumberLiteral, ()> {
     }
 }
 
-fn int_with_radix(input: &str, radix_width: usize, radix: u32) -> Result<NumberLiteral, ()> {
+fn int_with_radix(
+    input: &str,
+    radix_width: usize,
+    radix: u32,
+) -> Result<NumberLiteral, ()> {
     Ok(match input.chars().next() {
         Some('-') => {
             let text = input[radix_width + 1..].trim_start_matches('_');
@@ -179,13 +182,21 @@ fn int_with_radix(input: &str, radix_width: usize, radix: u32) -> Result<NumberL
     })
 }
 
-pub(crate) fn hex(input: &str) -> Result<NumberLiteral, ()> { int_with_radix(input, 2, 16) }
+pub(crate) fn hex(input: &str) -> Result<NumberLiteral, ()> {
+    int_with_radix(input, 2, 16)
+}
 
-pub(crate) fn oct(input: &str) -> Result<NumberLiteral, ()> { int_with_radix(input, 2, 8) }
+pub(crate) fn oct(input: &str) -> Result<NumberLiteral, ()> {
+    int_with_radix(input, 2, 8)
+}
 
-pub(crate) fn bin(input: &str) -> Result<NumberLiteral, ()> { int_with_radix(input, 2, 2) }
+pub(crate) fn bin(input: &str) -> Result<NumberLiteral, ()> {
+    int_with_radix(input, 2, 2)
+}
 
-pub(crate) fn dec(input: &str) -> Result<NumberLiteral, ()> { int_with_radix(input, 0, 10) }
+pub(crate) fn dec(input: &str) -> Result<NumberLiteral, ()> {
+    int_with_radix(input, 0, 10)
+}
 
 pub(super) fn parse_number(input: &str) -> TokenData {
     if input.starts_with('.') {
@@ -193,9 +204,8 @@ pub(super) fn parse_number(input: &str) -> TokenData {
             .map(TokenData::NumberLit)
             .unwrap_or(TokenData::Error(LexError::InvalidNum))
     } else {
-        let without_sign = input
-            .strip_prefix(|c: char| c == '+' || c == '-')
-            .unwrap_or(input);
+        let without_sign =
+            input.strip_prefix(|c: char| c == '+' || c == '-').unwrap_or(input);
         if without_sign.starts_with('0') {
             if let Some(x) = without_sign.chars().nth(1) {
                 match x {
@@ -292,7 +302,9 @@ mod tests {
         };
     }
 
-    fn approx(left: f64, right: f64) -> bool { (left / right - 1.0).abs() < 0.000000000001 }
+    fn approx(left: f64, right: f64) -> bool {
+        (left / right - 1.0).abs() < 0.000000000001
+    }
 
     #[test]
     fn decimal_ints() {
@@ -361,10 +373,7 @@ mod tests {
             "0._1",
             "expected exactly 1 token, got [Int(0)@`0` `.` InvalidNum@`_1`]"
         );
-        assert_err!(
-            ".12345e2345",
-            "expected number, got [InvalidNum@`.12345e2345`]",
-        );
+        assert_err!(".12345e2345", "expected number, got [InvalidNum@`.12345e2345`]",);
         assert_err!("0f.1", "expected number, got [InvalidNum@`0f.1`]");
     }
 }

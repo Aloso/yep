@@ -1,6 +1,8 @@
 use std::iter::Peekable;
 
-use crate::lexer::{Ident, Keyword, NumberLiteral, Operator, Punctuation, TokenData, UpperIdent};
+use crate::lexer::{
+    Ident, Keyword, NumberLiteral, Operator, Punctuation, TokenData, UpperIdent,
+};
 use crate::uoret;
 
 use super::helpers::*;
@@ -162,7 +164,9 @@ impl Parse for Expr {
                 ExprPart::Lambda(o) => Expr::Lambda(o),
                 ExprPart::Block(o) => Expr::Block(o),
                 ExprPart::Parens(o) => Expr::Tuple(o),
-                ExprPart::And | ExprPart::Or | ExprPart::Dot | ExprPart::Equals => return Ok(None),
+                ExprPart::And | ExprPart::Or | ExprPart::Dot | ExprPart::Equals => {
+                    return Ok(None)
+                }
             };
             Some(expr)
         } else {
@@ -171,7 +175,6 @@ impl Parse for Expr {
     }
 }
 
-#[rustfmt::skip]
 macro_rules! invk {
     ($s:ident($p:pat)) => {
         Invokable { name: Name::$s($p), .. }
@@ -202,10 +205,8 @@ fn pratt_parser(
         }
     }
 
-    let mut lhs = expr_parts
-        .next()
-        .ok_or(Error::Expected("expression"))?
-        .into_operand()?;
+    let mut lhs =
+        expr_parts.next().ok_or(Error::Expected("expression"))?.into_operand()?;
 
     loop {
         let op = match expr_parts.peek() {
@@ -284,8 +285,8 @@ impl Parse for Lambda {
     fn parse(lexer: LexerMut) -> ParseResult<Self> {
         uoret!(lexer.eat(Punctuation::Pipe));
 
-        let args =
-            vec_separated(lexer, LambdaArgument::parse, Punctuation::Comma)?.unwrap_or_default();
+        let args = vec_separated(lexer, LambdaArgument::parse, Punctuation::Comma)?
+            .unwrap_or_default();
 
         lexer.expect(Punctuation::Pipe)?;
 
@@ -300,8 +301,8 @@ impl Parse for Block {
     fn parse(lexer: LexerMut) -> ParseResult<Self> {
         uoret!(lexer.eat(Punctuation::OpenBrace));
 
-        let mut exprs =
-            vec_separated(lexer, Expr::parse, Punctuation::Semicolon)?.unwrap_or_default();
+        let mut exprs = vec_separated(lexer, Expr::parse, Punctuation::Semicolon)?
+            .unwrap_or_default();
 
         if lexer.eat(Punctuation::Semicolon).is_some() {
             exprs.push(Expr::Empty(Empty));
@@ -316,8 +317,8 @@ impl Parse for Parens {
     fn parse(lexer: LexerMut) -> ParseResult<Self> {
         uoret!(lexer.eat(Punctuation::OpenParen));
 
-        let exprs =
-            vec_separated(lexer, FunCallArgument::parse, Punctuation::Comma)?.unwrap_or_default();
+        let exprs = vec_separated(lexer, FunCallArgument::parse, Punctuation::Comma)?
+            .unwrap_or_default();
 
         if !exprs.is_empty() {
             let _ = lexer.eat(Punctuation::Comma);
@@ -347,11 +348,7 @@ impl Parse for Declaration {
         lexer.expect(Punctuation::Equals)?;
         let value = Box::new(Expr::parse_expect(lexer, "expression")?);
 
-        Ok(Some(Declaration {
-            decl_kind,
-            name,
-            value,
-        }))
+        Ok(Some(Declaration { decl_kind, name, value }))
     }
 }
 
@@ -377,13 +374,12 @@ impl Parse for FunCallArgument {
             let expr = Expr::parse_expect(&mut lexer_clone, "expression")?;
 
             *lexer = lexer_clone;
-            Ok(Some(FunCallArgument {
-                name: Some(name),
-                expr,
-            }))
+            Ok(Some(FunCallArgument { name: Some(name), expr }))
         }
 
-        fn wrap_expr(expr: Expr) -> FunCallArgument { FunCallArgument { name: None, expr } }
+        fn wrap_expr(expr: Expr) -> FunCallArgument {
+            FunCallArgument { name: None, expr }
+        }
 
         or2(parse_with_name, map(Expr::parse, wrap_expr))(lexer)
     }
@@ -474,7 +470,9 @@ impl ExprPart {
             ExprPart::Lambda(l) => Expr::Lambda(l),
             ExprPart::Block(b) => Expr::Block(b),
             ExprPart::Parens(p) => Expr::Tuple(p),
-            ExprPart::And | ExprPart::Or | ExprPart::Dot | ExprPart::Equals => return Err(todo!()),
+            ExprPart::And | ExprPart::Or | ExprPart::Dot | ExprPart::Equals => {
+                return Err(todo!())
+            }
         })
     }
 
@@ -491,11 +489,17 @@ impl ExprPart {
                 Err(Error::ExpectedGot3("operator", Expr::Invokable(i.clone())))
             }
 
-            ExprPart::Lambda(l) => Err(Error::ExpectedGot3("operator", Expr::Lambda(l.clone()))),
+            ExprPart::Lambda(l) => {
+                Err(Error::ExpectedGot3("operator", Expr::Lambda(l.clone())))
+            }
 
-            ExprPart::Block(b) => Err(Error::ExpectedGot3("operator", Expr::Block(b.clone()))),
+            ExprPart::Block(b) => {
+                Err(Error::ExpectedGot3("operator", Expr::Block(b.clone())))
+            }
 
-            ExprPart::Literal(l) => Err(Error::ExpectedGot3("operator", Expr::Literal(l.clone()))),
+            ExprPart::Literal(l) => {
+                Err(Error::ExpectedGot3("operator", Expr::Literal(l.clone())))
+            }
         }
     }
 
@@ -537,10 +541,7 @@ impl ExprPart {
             }),
             ExprPart::Equals => {
                 validate_operand(&lhs)?;
-                Expr::Assignment(Assignment {
-                    lhs: Box::new(lhs),
-                    rhs: Box::new(rhs),
-                })
+                Expr::Assignment(Assignment { lhs: Box::new(lhs), rhs: Box::new(rhs) })
             }
             _ => return Err(todo!()),
         })
@@ -550,10 +551,7 @@ impl ExprPart {
 impl Expr {
     fn to_operator(&self) -> Option<Operator> {
         match *self {
-            Expr::Invokable(Invokable {
-                name: Name::Operator(o),
-                ..
-            }) => Some(o),
+            Expr::Invokable(Invokable { name: Name::Operator(o), .. }) => Some(o),
             _ => None,
         }
     }

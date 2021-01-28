@@ -83,7 +83,9 @@ pub(super) fn wrap<T, U>(value: ParseResult<T>, f: impl Fn(T) -> U) -> ParseResu
     })
 }
 
-pub(super) fn expect2(expected: impl Into<TokenData>) -> impl FnOnce(LexerMut) -> ParseResult<()> {
+pub(super) fn expect2(
+    expected: impl Into<TokenData>,
+) -> impl FnOnce(LexerMut) -> ParseResult<()> {
     move |lexer: LexerMut| {
         Ok(if lexer.peek().data() == expected.into() {
             lexer.next();
@@ -125,15 +127,16 @@ pub(super) fn vec_separated_opt<T>(
 
 pub(super) fn parse_generics(lexer: LexerMut) -> ParseResult<Vec<GenericParam>> {
     uoret!(lexer.eat(Punctuation::OpenBracket));
-    let generics =
-        vec_separated(lexer, GenericParam::parse, Punctuation::Comma)?.unwrap_or_default();
+    let generics = vec_separated(lexer, GenericParam::parse, Punctuation::Comma)?
+        .unwrap_or_default();
     lexer.expect(Punctuation::CloseBracket)?;
     Ok(Some(generics))
 }
 
 pub(super) fn parse_type_arguments(lexer: LexerMut) -> ParseResult<Vec<TypeArgument>> {
     uoret!(lexer.eat(Punctuation::OpenBracket));
-    let args = vec_separated(lexer, TypeArgument::parse, Punctuation::Comma)?.unwrap_or_default();
+    let args = vec_separated(lexer, TypeArgument::parse, Punctuation::Comma)?
+        .unwrap_or_default();
     lexer.expect(Punctuation::CloseBracket)?;
     Ok(Some(args))
 }

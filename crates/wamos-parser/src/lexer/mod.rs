@@ -18,7 +18,10 @@ pub fn lex(text: &str) -> Program<'_> {
     Program { text, tokens }
 }
 
-pub fn lex_with_interner<'a>(text: &'a str, interner: &'a mut StringInterner) -> Program<'a> {
+pub fn lex_with_interner<'a>(
+    text: &'a str,
+    interner: &'a mut StringInterner,
+) -> Program<'a> {
     let tokens = tokens::lex(text, interner);
     Program { text, tokens }
 }
@@ -46,10 +49,7 @@ impl<'a> Program<'a> {
     }
 
     pub fn with_tokens(&'a self, tokens: &'a [Token<'a>]) -> Self {
-        Program {
-            tokens: tokens.to_vec(),
-            text: self.text,
-        }
+        Program { tokens: tokens.to_vec(), text: self.text }
     }
 
     pub fn with_lifeless_tokens(&'a self, tokens: &'a [LifelessToken]) -> Self {

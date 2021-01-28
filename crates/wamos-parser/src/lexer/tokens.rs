@@ -20,20 +20,13 @@ pub struct LifelessToken {
 
 impl Token<'_> {
     pub fn lifeless(&self) -> LifelessToken {
-        LifelessToken {
-            data: self.data,
-            span: self.span.clone(),
-        }
+        LifelessToken { data: self.data, span: self.span.clone() }
     }
 }
 
 impl LifelessToken {
     pub fn to_static_token(&self) -> Token<'static> {
-        Token {
-            data: self.data,
-            span: self.span.clone(),
-            lt: PhantomData,
-        }
+        Token { data: self.data, span: self.span.clone(), lt: PhantomData }
     }
 }
 
@@ -59,11 +52,7 @@ pub enum LexError {
 
 impl<'a> Token<'a> {
     fn new(data: TokenData, span: Range<usize>) -> Self {
-        Self {
-            data,
-            span,
-            lt: PhantomData,
-        }
+        Self { data, span, lt: PhantomData }
     }
 
     pub fn data(&self) -> TokenData { self.data }
@@ -208,25 +197,19 @@ struct TokenFormatting<'a> {
 }
 
 impl fmt::Debug for TokenFormatting<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result { self.token.debug(self.text, f) }
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.token.debug(self.text, f)
+    }
 }
 
 impl fmt::Debug for Token<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{}..{} @ {:?}",
-            self.span.start, self.span.end, &self.data
-        )
+        write!(f, "{}..{} @ {:?}", self.span.start, self.span.end, &self.data)
     }
 }
 
 impl fmt::Debug for LifelessToken {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{}..{} @ {:?}",
-            self.span.start, self.span.end, &self.data
-        )
+        write!(f, "{}..{} @ {:?}", self.span.start, self.span.end, &self.data)
     }
 }

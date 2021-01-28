@@ -64,9 +64,7 @@ impl<'a, 'b> Lexer<'a, 'b> {
         {
             Ok(())
         } else {
-            Err(Error::RemainingTokens(
-                self.tokens.iter().map(Token::lifeless).collect(),
-            ))
+            Err(Error::RemainingTokens(self.tokens.iter().map(Token::lifeless).collect()))
         }
     }
 
@@ -102,7 +100,8 @@ pub enum Error {
     ExpectedGot3(&'static str, Expr),
 
     #[error(
-        "Operators are not allowed here: {0:?}\n  tip: Wrap the operator in braces, e.g. `{{+}}`"
+        "Operators are not allowed here: {0:?}\n  tip: Wrap the operator in braces, \
+         e.g. `{{+}}`"
     )]
     OperatorInsteadOfOperand(Operator),
 }

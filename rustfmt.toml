@@ -10,8 +10,5 @@ newline_style = "Unix"
 overflow_delimited_expr = true
 use_field_init_shorthand = true
 wrap_comments = true
-
-enum_discrim_align_threshold = 20
-fn_call_width = 80
-single_line_if_else_max_width = 60
-struct_lit_width = 30
+use_small_heuristics = "Max"
+max_width = 90

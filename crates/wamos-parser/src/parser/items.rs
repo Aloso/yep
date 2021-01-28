@@ -31,8 +31,8 @@ impl Parse for Function {
         let generics = parse_generics(lexer)?.unwrap_or_default();
 
         lexer.expect(Punctuation::OpenParen)?;
-        let args =
-            vec_separated(lexer, FunArgument::parse, Punctuation::Comma)?.unwrap_or_default();
+        let args = vec_separated(lexer, FunArgument::parse, Punctuation::Comma)?
+            .unwrap_or_default();
         lexer.expect(Punctuation::CloseParen)?;
 
         let return_ty = NamedType::parse(lexer)?;
@@ -45,13 +45,7 @@ impl Parse for Function {
             }
         };
 
-        Ok(Some(Function {
-            name,
-            generics,
-            args,
-            return_ty,
-            body,
-        }))
+        Ok(Some(Function { name, generics, args, return_ty, body }))
     }
 }
 
@@ -76,11 +70,7 @@ impl Parse for FunArgument {
         let name = uoret!(Ident::parse(rest)?);
         let ty = NamedType::parse(rest)?;
 
-        let mut fun_arg = FunArgument {
-            name,
-            ty,
-            default: None,
-        };
+        let mut fun_arg = FunArgument { name, ty, default: None };
         if rest.eat(Punctuation::Equals).is_some() {
             fun_arg.default = Some(Expr::parse_expect(rest, "default expression")?);
         }
