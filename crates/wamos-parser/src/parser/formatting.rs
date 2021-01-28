@@ -193,22 +193,22 @@ fn test_formatting() {
     test(FancyKV("Foo", "Bar"), "Foo: Bar");
     test(
         FancyKV("Foo", FancyWrap("  Bar", str::trim, false)),
-        "Foo\n  Bar\n",
+        "Foo\n   Bar\n",
     );
     test(FancyKV("Foo", empty_list), "");
-    test(FancyKV("Foo", &short_list), "Foo\n  A\n  B\n");
+    test(FancyKV("Foo", &short_list), "Foo\n   A\n   B\n");
     test(FancyKV("Foo", &short_list3), "Foo: E");
     test(
         FancyKV("Foo", dyn_list(&[&"A", &FancyKV("Bar", short_list2)])),
-        "Foo\n  A\n  Bar\n    C\n    D\n",
+        "Foo\n   A\n   Bar\n      C\n      D\n",
     );
     test(
         FancyKV("Foo", dyn_list(&[&"A", &FancyKV("Bar", &short_list3)])),
-        "Foo\n  A\n  Bar: E\n",
+        "Foo\n   A\n   Bar: E\n",
     );
     test(
         FancyKV("Foo", FancyKV("Bar", FancyKV("Baz", short_list))),
-        "Foo\n  Bar\n    Baz\n      A\n      B\n",
+        "Foo\n   Bar\n      Baz\n         A\n         B\n",
     );
     test(
         FancyKV("Foo", FancyKV("Bar", FancyKV("Baz", short_list3))),

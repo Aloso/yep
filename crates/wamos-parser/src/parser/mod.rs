@@ -56,6 +56,8 @@ impl<'a, 'b> Lexer<'a, 'b> {
     /// Return the next token _without_ advancing the lexer
     fn peek(&self) -> &Token { &self.tokens[0] }
 
+    fn len(&self) -> usize { self.tokens.len() }
+
     fn finish(&mut self) -> Result<(), Error> {
         if self.tokens.is_empty()
             || (self.tokens.len() == 1 && self.tokens[0].data() == TokenData::EOF)
@@ -89,6 +91,9 @@ pub enum Error {
 
     #[error("There are remaining tokens that could not be parsed: {0:?}")]
     RemainingTokens(Vec<LifelessToken>),
+
+    #[error("Expected {0}")]
+    Expected(&'static str),
 
     #[error("Expected {0:?}, got {1:?}")]
     ExpectedGot(TokenData, TokenData),

@@ -145,8 +145,13 @@ impl Parse for Expr {
     fn parse(lexer: LexerMut) -> ParseResult<Self> {
         let mut parts = Vec::new();
 
+        let mut len = lexer.len();
         while let Some(part) = ExprPart::parse(lexer)? {
             parts.push(part);
+            if lexer.len() == len {
+                return Err(Error::ExpectedGot2("expression", lexer.peek().data()));
+            }
+            len = lexer.len();
         }
         Ok(if parts.is_empty() {
             None
@@ -200,7 +205,10 @@ fn pratt_parser(
         }
     }
 
-    let mut lhs = expr_parts.next().ok_or_else(|| todo!())?.into_operand()?;
+    let mut lhs = expr_parts
+        .next()
+        .ok_or(Error::Expected("expression"))?
+        .into_operand()?;
 
     loop {
         let op = match expr_parts.peek() {
@@ -435,14 +443,17 @@ pub(super) enum ExprPart {
 
 impl Parse for ExprPart {
     fn parse(lexer: LexerMut) -> ParseResult<Self> {
+        #[allow(clippy::unnecessary_wraps)]
         fn parse_and_or_dot_equals(lexer: LexerMut) -> ParseResult<ExprPart> {
-            Ok(Some(match lexer.peek().data() {
+            let part = match lexer.peek().data() {
                 TokenData::Keyword(Keyword::And) => ExprPart::And,
                 TokenData::Keyword(Keyword::Or) => ExprPart::Or,
                 TokenData::Punct(Punctuation::Dot) => ExprPart::Dot,
                 TokenData::Punct(Punctuation::Equals) => ExprPart::Equals,
                 _ => return Ok(None),
-            }))
+            };
+            lexer.next();
+            Ok(Some(part))
         }
 
         or6(

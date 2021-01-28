@@ -198,7 +198,7 @@ pub(super) fn lex<'a>(text: &'a str, interner: &mut StringInterner) -> Vec<Token
             }
         }
     }
-    v.push(Token::new(TokenData::EOF, text.len() - 1..text.len()));
+    v.push(Token::new(TokenData::EOF, text.len()..text.len()));
     v
 }
 

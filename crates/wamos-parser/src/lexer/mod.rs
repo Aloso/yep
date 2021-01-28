@@ -58,6 +58,13 @@ impl<'a> Program<'a> {
             text: self.text,
         }
     }
+
+    pub fn no_eof(&mut self) {
+        match self.tokens.pop() {
+            Some(t) if t.data != TokenData::EOF => self.tokens.push(t),
+            _ => {}
+        }
+    }
 }
 
 impl fmt::Debug for Program<'_> {
@@ -104,6 +111,7 @@ mod tests {
     i`hello`
     `,`
     i`world!`
+    EOF
 ]"#
         );
     }
@@ -116,8 +124,8 @@ mod tests {
 # very cool function!
 fun foo() Bool {
     let x-y = 5 Int;
-    var test? = \\ x-y >gt 42;
-    test?()
+    var test! = \\ x-y >gt 42;
+    test!()
 }",
             r#"[
     k`fun`
@@ -133,17 +141,18 @@ fun foo() Bool {
     I`Int`
     `;`
     k`var`
-    i`test?`
+    i`test!`
     `=`
     `\`
     i`x-y`
     o`>gt`
     Int(42)@`42`
     `;`
-    i`test?`
+    i`test!`
     `(`
     `)`
     `}`
+    EOF
 ]"#
         );
     }
@@ -218,6 +227,7 @@ fun foo() Bool {
     `)`
     `}`
     `}`
+    EOF
 ]"#
         )
     }

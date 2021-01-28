@@ -244,7 +244,8 @@ mod tests {
     impl FromStr for Num {
         type Err = anyhow::Error;
         fn from_str(text: &str) -> Result<Self> {
-            let program = lexer::lex(text);
+            let mut program = lexer::lex(text);
+            program.no_eof();
             if program.token_len() != 1 {
                 bail!("expected exactly 1 token, got {:#?}", program);
             }
@@ -350,21 +351,15 @@ mod tests {
     #[test]
     fn invalid_floats() {
         assert_err!(".", "expected number, got [`.`]");
-        assert_err!(
-            "._1",
-            "expected exactly 1 token, got [`.`  InvalidNum@`_1`]"
-        );
-        assert_err!(
-            "_.1",
-            "expected exactly 1 token, got [`_`  Float(0.1)@`.1`]"
-        );
+        assert_err!("._1", "expected exactly 1 token, got [`.` InvalidNum@`_1`]");
+        assert_err!("_.1", "expected exactly 1 token, got [`_` Float(0.1)@`.1`]");
         assert_err!("-.1", "expected number, got [NoWS@`-.1`]");
         assert_err!("1e", "expected number, got [InvalidNum@`1e`]");
         assert_err!("1e__", "expected number, got [InvalidNum@`1e__`]");
         assert_err!("1e_+1", "expected number, got [InvalidNum@`1e_+1`]");
         assert_err!(
             "0._1",
-            "expected exactly 1 token, got [Int(0)@`0`  `.`  InvalidNum@`_1`]"
+            "expected exactly 1 token, got [Int(0)@`0` `.` InvalidNum@`_1`]"
         );
         assert_err!(
             ".12345e2345",
