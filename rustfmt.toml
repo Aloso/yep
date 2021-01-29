@@ -12,3 +12,4 @@ use_field_init_shorthand = true
 wrap_comments = true
 use_small_heuristics = "Max"
 max_width = 90
+imports_granularity = "Module"

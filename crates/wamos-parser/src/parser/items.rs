@@ -1,8 +1,11 @@
-use crate::lexer::{Ident, Keyword, Operator, Punctuation, TokenData, UpperIdent};
 use crate::uoret;
+use crate::{
+    lexer::{Ident, Keyword, Operator, Punctuation, TokenData, UpperIdent},
+    text_range::TextRange,
+};
 
 use super::{
-    expr::{Block, Expr},
+    expr::{Block, Expr, ExprData},
     helpers::*,
     LexerMut, Parse, ParseResult,
 };
@@ -25,56 +28,75 @@ impl Parse for Item {
 
 impl Parse for Function {
     fn parse(lexer: LexerMut) -> ParseResult<Self> {
-        uoret!(lexer.eat(Keyword::Fun));
+        let mut span = uoret!(lexer.eat(Keyword::Fun));
 
         let name = Name::parse_expect(lexer, "name")?;
-        let generics = parse_generics(lexer)?.unwrap_or_default();
 
-        lexer.expect(Punctuation::OpenParen)?;
-        let args = vec_separated(lexer, FunArgument::parse, Punctuation::Comma)?
-            .unwrap_or_default();
-        lexer.expect(Punctuation::CloseParen)?;
+        let generics = enclose_multiple(
+            GenericParam::parse,
+            Punctuation::OpenBracket,
+            Punctuation::Comma,
+            Punctuation::CloseBracket,
+            true,
+        )(lexer)?
+        .unwrap_or_default();
+
+        let args = enclose_multiple_expect(
+            FunArgument::parse,
+            Punctuation::OpenParen,
+            Punctuation::Comma,
+            Punctuation::CloseParen,
+            true,
+        )(lexer)?;
+        span = span.merge(args.1);
 
         let return_ty = NamedType::parse(lexer)?;
+        span = span.merge_if(&return_ty);
 
         let body = match lexer.eat(Punctuation::Semicolon) {
             Some(_) => None,
             None => {
-                let body = Block::parse_expect(lexer, "function body")?;
-                Some(Expr::Block(body))
+                let (body, body_span) = Block::parse_expect(lexer, "function body")?;
+                span = span.merge(body_span);
+                Some(Expr::new(ExprData::Block(body), body_span))
             }
         };
+        span = span.merge_if_expr(&body);
 
-        Ok(Some(Function { name, generics, args, return_ty, body }))
+        Ok(Some((Function { name, generics, args, return_ty, body }, span)))
     }
 }
 
 impl Parse for GenericParam {
     fn parse(lexer: LexerMut) -> ParseResult<Self> {
-        let name = uoret!(UpperIdent::parse(lexer)?);
+        let (name, span) = uoret!(UpperIdent::parse(lexer)?);
         let bounds = Vec::new();
-        Ok(Some(GenericParam { name, bounds }))
+        Ok(Some((GenericParam { name, bounds }, span)))
     }
 }
 
 impl Parse for NamedType {
     fn parse(rest: LexerMut) -> ParseResult<Self> {
         let name = uoret!(UpperIdent::parse(rest)?);
-        let args = parse_type_arguments(rest)?.unwrap_or_default();
-        Ok(Some(NamedType { name, args }))
+        let (args, args_span) = parse_type_arguments(rest)?.unwrap_or_default();
+        let span = name.1.merge(args_span);
+        Ok(Some((NamedType { name, args }, span)))
     }
 }
 
 impl Parse for FunArgument {
     fn parse(rest: LexerMut) -> ParseResult<Self> {
-        let name = uoret!(Ident::parse(rest)?);
+        let (name, mut span) = uoret!(Ident::parse(rest)?);
         let ty = NamedType::parse(rest)?;
+        span = span.merge_if(&ty);
 
         let mut fun_arg = FunArgument { name, ty, default: None };
         if rest.eat(Punctuation::Equals).is_some() {
-            fun_arg.default = Some(Expr::parse_expect(rest, "default expression")?);
+            let (expr, def_span) = ExprData::parse_expect(rest, "default expression")?;
+            span = span.merge(def_span);
+            fun_arg.default = Some(Expr::new(expr, def_span));
         }
-        Ok(Some(fun_arg))
+        Ok(Some((fun_arg, span)))
     }
 }
 
@@ -86,8 +108,8 @@ impl Parse for Name {
             TokenData::Operator(name) => Name::Operator(name),
             _ => return Ok(None),
         };
-        lexer.next();
-        Ok(Some(fun_name))
+        let span = lexer.next().span();
+        Ok(Some((fun_name, span)))
     }
 }
 
@@ -108,16 +130,16 @@ impl Parse for Enum {
 impl Parse for TypeArgument {
     fn parse(lexer: LexerMut) -> ParseResult<Self> {
         or2(map(NamedType::parse, TypeArgument::Type), |lexer| {
-            uoret!(lexer.eat(Punctuation::Underscore));
-            Ok(Some(TypeArgument::Wildcard))
+            let span = uoret!(lexer.eat(Punctuation::Underscore));
+            Ok(Some((TypeArgument::Wildcard, span)))
         })(lexer)
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct NamedType {
-    pub name: UpperIdent,
-    pub args: Vec<TypeArgument>,
+    pub name: (UpperIdent, TextRange),
+    pub args: Vec<(TypeArgument, TextRange)>,
 }
 
 #[derive(Debug, Clone)]
@@ -128,10 +150,10 @@ pub enum TypeArgument {
 }
 
 pub struct Function {
-    pub name: Name,
-    pub generics: Vec<GenericParam>,
-    pub args: Vec<FunArgument>,
-    pub return_ty: Option<NamedType>,
+    pub name: (Name, TextRange),
+    pub generics: (Vec<(GenericParam, TextRange)>, TextRange),
+    pub args: (Vec<(FunArgument, TextRange)>, TextRange),
+    pub return_ty: Option<(NamedType, TextRange)>,
     pub body: Option<Expr>,
 }
 
@@ -144,7 +166,7 @@ pub enum Name {
 
 pub struct FunArgument {
     pub name: Ident,
-    pub ty: Option<NamedType>,
+    pub ty: Option<(NamedType, TextRange)>,
     pub default: Option<Expr>,
 }
 
@@ -156,7 +178,7 @@ pub struct Class {
 
 pub struct GenericParam {
     pub name: UpperIdent,
-    pub bounds: Vec<TypeBound>,
+    pub bounds: Vec<(TypeBound, TextRange)>,
 }
 
 pub enum TypeBound {
@@ -166,7 +188,7 @@ pub enum TypeBound {
 pub struct ClassField {
     pub name: Ident,
     pub ty: Option<NamedType>,
-    pub default: Option<Expr>,
+    pub default: Option<ExprData>,
 }
 
 pub struct Enum {

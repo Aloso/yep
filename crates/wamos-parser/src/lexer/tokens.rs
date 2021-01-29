@@ -9,7 +9,7 @@ use super::idents::StringLiteral;
 use super::syntax::{parse_keyword, IToken};
 use super::{numbers, Ident, Keyword, NumberLiteral, Operator, Punctuation, UpperIdent};
 
-#[derive(Clone)]
+#[derive(Copy, Clone)]
 pub struct Token<'a> {
     pub(super) data: TokenData,
     span: TextRange,

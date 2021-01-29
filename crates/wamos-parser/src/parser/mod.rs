@@ -1,17 +1,20 @@
-use crate::lexer::{LifelessToken, Operator, Token, TokenData};
+use crate::{
+    lexer::{LifelessToken, Operator, Token, TokenData},
+    text_range::TextRange,
+};
 
 pub use self::formatting::FancyFormat;
-use self::{expr::Expr, items::Item};
+use self::{expr::ExprData, items::Item};
 
-mod expr;
-mod formatting;
+pub mod expr;
+pub mod formatting;
 mod formatting_impl;
 mod helpers;
-mod items;
-mod patterns;
+pub mod items;
+pub mod patterns;
 
 type Tokens<'a> = &'a [Token<'a>];
-type ParseResult<T> = Result<Option<T>, Error>;
+type ParseResult<T> = Result<Option<(T, TextRange)>, Error>;
 type LexerMut<'a, 'b, 'c> = &'a mut Lexer<'b, 'c>;
 
 #[derive(Debug, Clone)]
@@ -25,32 +28,31 @@ impl<'a, 'b> Lexer<'a, 'b> {
     /// Returns `Some(())` and advances the lexer if the next token matches
     /// `elem`
     #[must_use]
-    fn eat(&mut self, token: impl Into<TokenData>) -> Option<()> {
+    fn eat(&mut self, token: impl Into<TokenData>) -> Option<TextRange> {
         let (next, rest) = self.tokens.split_first().unwrap();
         if token.into() == next.data() {
             self.tokens = rest;
-            Some(())
+            Some(next.span())
         } else {
             None
         }
     }
 
-    fn expect(&mut self, token: impl Into<TokenData>) -> Result<(), Error> {
+    fn expect(&mut self, token: impl Into<TokenData>) -> Result<TextRange, Error> {
         let expected = token.into();
         let got = self.peek().data();
         if expected == got {
-            self.next();
-            Ok(())
+            Ok(self.next().span())
         } else {
             Err(Error::ExpectedGot(expected, got))
         }
     }
 
     /// Return the next token and advance the lexer
-    fn next(&mut self) -> TokenData {
-        let (next, rest) = self.tokens.split_first().unwrap();
+    fn next(&mut self) -> Token {
+        let (&next, rest) = self.tokens.split_first().unwrap();
         self.tokens = rest;
-        next.data()
+        next
     }
 
     /// Return the next token _without_ advancing the lexer
@@ -68,7 +70,7 @@ impl<'a, 'b> Lexer<'a, 'b> {
         }
     }
 
-    pub fn parse_items(&'a mut self) -> Result<Vec<Item>, Error> {
+    pub fn parse_items(&'a mut self) -> Result<Vec<(Item, TextRange)>, Error> {
         let mut results = Vec::new();
         while let Some(result) = Item::parse(self)? {
             results.push(result);
@@ -78,7 +80,7 @@ impl<'a, 'b> Lexer<'a, 'b> {
     }
 }
 
-pub fn parse(tokens: &[Token]) -> Result<Vec<Item>, Error> {
+pub fn parse(tokens: &[Token]) -> Result<Vec<(Item, TextRange)>, Error> {
     Lexer::from_tokens(tokens).parse_items()
 }
 
@@ -97,7 +99,7 @@ pub enum Error {
     ExpectedGot2(&'static str, TokenData),
 
     #[error("Expected {0}, got {1:?}")]
-    ExpectedGot3(&'static str, Expr),
+    ExpectedGot3(&'static str, ExprData),
 
     #[error(
         "Operators are not allowed here: {0:?}\n  tip: Wrap the operator in braces, \
@@ -110,7 +112,10 @@ trait Parse: Sized {
     fn parse(lexer: LexerMut) -> ParseResult<Self>;
 
     #[inline]
-    fn parse_expect(lexer: LexerMut, expect: &'static str) -> Result<Self, Error> {
+    fn parse_expect(
+        lexer: LexerMut,
+        expect: &'static str,
+    ) -> Result<(Self, TextRange), Error> {
         match Self::parse(lexer)? {
             Some(result) => Ok(result),
             None => Err(Error::ExpectedGot2(expect, lexer.peek().data())),

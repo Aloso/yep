@@ -1,5 +1,7 @@
 use string_interner::StringInterner;
 
+use crate::text_range::{Spanned, TextRange};
+
 fn do_indent(buf: &mut String, indent: usize) { buf.extend((0..indent).map(|_| ' ')); }
 
 
@@ -70,7 +72,8 @@ pub(crate) struct FancyList<'a, T>(pub &'a [T]);
 impl<T: FancyFormat> FancyFormat for FancyList<'_, T> {
     fn fmt_impl(&self, buf: &mut String, indent: usize, interner: &StringInterner) {
         if self.is_single_line() {
-            self.0[0].fmt(buf, indent, interner);
+            let v = self.0.iter().find(|&x| !x.is_empty()).unwrap();
+            v.fmt(buf, indent, interner);
         } else {
             for (i, x) in self.0.iter().filter(|&x| !x.is_empty()).enumerate() {
                 if i > 0 {
@@ -84,9 +87,22 @@ impl<T: FancyFormat> FancyFormat for FancyList<'_, T> {
         }
     }
 
-    fn is_empty(&self) -> bool { self.0.is_empty() }
+    fn is_empty(&self) -> bool { self.0.iter().all(|t| t.is_empty()) }
 
-    fn is_single_line(&self) -> bool { self.0.len() == 1 && self.0[0].is_single_line() }
+    fn is_single_line(&self) -> bool {
+        let mut single_lines = 0;
+        for v in self.0.iter().filter(|&x| !x.is_empty()) {
+            if v.is_single_line() {
+                single_lines += 1;
+            } else {
+                return false;
+            }
+            if single_lines > 1 {
+                return false;
+            }
+        }
+        single_lines == 1
+    }
 }
 
 impl<T: FancyFormat> FancyFormat for Vec<T> {
@@ -94,9 +110,9 @@ impl<T: FancyFormat> FancyFormat for Vec<T> {
         FancyList(self.as_slice()).fmt_impl(buf, indent, interner)
     }
 
-    fn is_single_line(&self) -> bool { self.len() == 1 && self[0].is_single_line() }
+    fn is_single_line(&self) -> bool { FancyList(self.as_slice()).is_single_line() }
 
-    fn is_empty(&self) -> bool { self.is_empty() }
+    fn is_empty(&self) -> bool { self.iter().all(|t| t.is_empty()) }
 }
 
 pub(crate) struct FancyKV<K: FancyFormat, V: FancyFormat>(pub K, pub V);
@@ -161,6 +177,34 @@ impl<T: FancyFormat> FancyFormat for Box<T> {
 
     fn fmt(&self, buf: &mut String, indent: usize, interner: &StringInterner) {
         (**self).fmt(buf, indent, interner)
+    }
+}
+
+impl<T: FancyFormat> FancyFormat for (T, TextRange) {
+    fn fmt_impl(&self, buf: &mut String, indent: usize, interner: &StringInterner) {
+        self.0.fmt_impl(buf, indent, interner)
+    }
+
+    fn is_single_line(&self) -> bool { self.0.is_single_line() }
+
+    fn is_empty(&self) -> bool { self.0.is_empty() }
+
+    fn fmt(&self, buf: &mut String, indent: usize, interner: &StringInterner) {
+        self.0.fmt(buf, indent, interner)
+    }
+}
+
+impl<T: FancyFormat> FancyFormat for Spanned<T> {
+    fn fmt_impl(&self, buf: &mut String, indent: usize, interner: &StringInterner) {
+        self.inner().fmt_impl(buf, indent, interner)
+    }
+
+    fn is_single_line(&self) -> bool { self.inner().is_single_line() }
+
+    fn is_empty(&self) -> bool { self.inner().is_empty() }
+
+    fn fmt(&self, buf: &mut String, indent: usize, interner: &StringInterner) {
+        self.inner().fmt(buf, indent, interner)
     }
 }
 
