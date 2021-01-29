@@ -214,12 +214,12 @@ impl fmt::Debug for TokenFormatting<'_> {
 
 impl fmt::Debug for Token<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{} @ {:?}", self.span, &self.data)
+        write!(f, "{:?} @ {:?}", self.span, &self.data)
     }
 }
 
 impl fmt::Debug for LifelessToken {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{} @ {:?}", self.span, &self.data)
+        write!(f, "{:?} @ {:?}", self.span, &self.data)
     }
 }

@@ -1,15 +1,13 @@
-use crate::uoret;
 use crate::{
     lexer::{Ident, Keyword, Operator, Punctuation, TokenData, UpperIdent},
     text_range::TextRange,
 };
+use crate::{text_range::Spanned, uoret};
 
-use super::{
-    expr::{Block, Expr, ExprData},
-    helpers::*,
-    LexerMut, Parse, ParseResult,
-};
+use super::expr::{Block, Expr, ExprData};
+use super::{helpers::*, LexerMut, Parse, ParseResult};
 
+#[derive(Debug, Clone)]
 pub enum Item {
     Function(Function),
     Class(Class),
@@ -78,9 +76,10 @@ impl Parse for GenericParam {
 impl Parse for NamedType {
     fn parse(rest: LexerMut) -> ParseResult<Self> {
         let name = uoret!(UpperIdent::parse(rest)?);
-        let (args, args_span) = parse_type_arguments(rest)?.unwrap_or_default();
-        let span = name.1.merge(args_span);
-        Ok(Some((NamedType { name, args }, span)))
+        let args = parse_type_arguments(rest)?;
+        let span = name.1.merge_if(&args);
+        let (args, _) = args.unwrap_or_default();
+        Ok(Some((NamedType { name: name.into(), args }, span)))
     }
 }
 
@@ -138,7 +137,7 @@ impl Parse for TypeArgument {
 
 #[derive(Debug, Clone)]
 pub struct NamedType {
-    pub name: (UpperIdent, TextRange),
+    pub name: Spanned<UpperIdent>,
     pub args: Vec<(TypeArgument, TextRange)>,
 }
 
@@ -149,6 +148,7 @@ pub enum TypeArgument {
     // TODO: Tuple type
 }
 
+#[derive(Debug, Clone)]
 pub struct Function {
     pub name: (Name, TextRange),
     pub generics: (Vec<(GenericParam, TextRange)>, TextRange),
@@ -164,39 +164,46 @@ pub enum Name {
     Type(UpperIdent),
 }
 
+#[derive(Debug, Clone)]
 pub struct FunArgument {
     pub name: Ident,
     pub ty: Option<(NamedType, TextRange)>,
     pub default: Option<Expr>,
 }
 
+#[derive(Debug, Clone)]
 pub struct Class {
     pub name: UpperIdent,
     pub generics: Vec<GenericParam>,
     pub fields: Vec<ClassField>,
 }
 
+#[derive(Debug, Clone)]
 pub struct GenericParam {
     pub name: UpperIdent,
     pub bounds: Vec<(TypeBound, TextRange)>,
 }
 
+#[derive(Debug, Clone)]
 pub enum TypeBound {
     // TODO: Interface/trait/contract/superclass
 }
 
+#[derive(Debug, Clone)]
 pub struct ClassField {
     pub name: Ident,
     pub ty: Option<NamedType>,
     pub default: Option<ExprData>,
 }
 
+#[derive(Debug, Clone)]
 pub struct Enum {
     pub name: UpperIdent,
     pub generics: Vec<GenericParam>,
     pub variants: Vec<EnumVariant>,
 }
 
+#[derive(Debug, Clone)]
 pub struct EnumVariant {
     pub name: Ident,
     pub argument: Option<NamedType>,

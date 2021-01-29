@@ -1,12 +1,10 @@
 use std::ops::{Deref, Index, Range};
 use std::{cmp::Ordering, convert::TryInto, fmt};
 
-use fmt::Debug;
-
 use crate::parser::expr::Expr;
 
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Default, Hash)]
 pub struct TextRange {
     start: u32,
     end: u32,
@@ -44,7 +42,7 @@ impl TextRange {
     }
 }
 
-impl fmt::Display for TextRange {
+impl fmt::Debug for TextRange {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}..{}", self.start, self.end)
     }

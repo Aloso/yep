@@ -63,14 +63,23 @@ impl Expr {
 
 #[derive(Debug, Clone)]
 pub struct Invokable {
-    pub name: (Name, TextRange),
+    pub name: Spanned<Name>,
     pub generics: Vec<(TypeArgument, TextRange)>,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Copy, Clone)]
 pub enum Literal {
     NumberLit(NumberLiteral),
     StringLit(StringLiteral),
+}
+
+impl fmt::Debug for Literal {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Literal::NumberLit(x) => write!(f, "{:?}", x),
+            Literal::StringLit(x) => write!(f, "{:?}", x),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -209,35 +218,26 @@ impl Parse for ExprData {
     }
 }
 
-macro_rules! invk {
-    ($s1:ident($p:pat)) => {
-        Invokable { name: (Name::$s1($p), _), .. }
-    };
-    ($s1:ident($p:pat), $s2:pat) => {
-        Invokable { name: (Name::$s1($p), $s2), .. }
-    };
-}
-
 /// <https://matklad.github.io/2020/04/13/simple-but-powerful-pratt-parsing.html>
 fn pratt_parser(
     expr_parts: &mut Peekable<impl Iterator<Item = (ExprPart, TextRange)>>,
     min_bp: u8,
 ) -> Result<Expr, Error> {
     fn postfix_binding_power(op: &ExprPart) -> Option<(u8, ())> {
-        match op {
-            ExprPart::Invokable(invk!(Type(_))) => Some((11, ())),
-            ExprPart::Parens(_) => Some((9, ())),
+        match op.kind() {
+            ExprPartKind::InvokableType => Some((11, ())),
+            ExprPartKind::Parens => Some((9, ())),
             _ => None,
         }
     }
 
     fn infix_binding_power(op: &ExprPart) -> Option<(u8, u8)> {
-        match op {
-            ExprPart::Dot => Some((13, 14)),
-            ExprPart::Invokable(invk!(Operator(_))) => Some((7, 8)),
-            ExprPart::And => Some((5, 6)),
-            ExprPart::Or => Some((3, 4)),
-            ExprPart::Equals => Some((2, 1)),
+        match op.kind() {
+            ExprPartKind::Dot => Some((13, 14)),
+            ExprPartKind::InvokableOperator => Some((7, 8)),
+            ExprPartKind::And => Some((5, 6)),
+            ExprPartKind::Or => Some((3, 4)),
+            ExprPartKind::Equals => Some((2, 1)),
             _ => None,
         }
     }
@@ -264,13 +264,18 @@ fn pratt_parser(
                     receiver: lhs,
                     args: Some(tuple.into_fun_call_args()),
                 }),
-                ExprPart::Invokable(Invokable {
-                    name: (Name::Type(name), name_span),
-                    generics: args,
-                }) => ExprData::TypeAscription(TypeAscription {
-                    expr: lhs,
-                    ty: NamedType { name: (name, name_span), args },
-                }),
+                ExprPart::Invokable(Invokable { name, generics: args }) => {
+                    match name.into_inner() {
+                        (Name::Type(name), name_span) => {
+                            let name = Spanned::new(name, name_span);
+                            ExprData::TypeAscription(TypeAscription {
+                                expr: lhs,
+                                ty: NamedType { name, args },
+                            })
+                        }
+                        (t, _) => panic!("Unexpected token {:?}", t),
+                    }
+                }
                 t => panic!("Unexpected token {:?}", t),
             };
             lhs = Expr::new(lhs_data, lhs_span.merge(op_span));
@@ -306,9 +311,10 @@ impl Parse for Literal {
 impl Parse for Invokable {
     fn parse(lexer: LexerMut) -> ParseResult<Self> {
         let name = uoret!(Name::parse(lexer)?);
-        let (generics, gen_span) = parse_type_arguments(lexer)?.unwrap_or_default();
-        let span = name.1.merge(gen_span);
-        Ok(Some((Invokable { name, generics }, span)))
+        let generics = parse_type_arguments(lexer)?;
+        let span = name.1.merge_if(&generics);
+        let (generics, _) = generics.unwrap_or_default();
+        Ok(Some((Invokable { name: name.into(), generics }, span)))
     }
 }
 
@@ -506,6 +512,21 @@ pub(super) enum ExprPart {
     Equals,
 }
 
+pub(super) enum ExprPartKind {
+    StringLit,
+    NumberLit,
+    InvokableIdent,
+    InvokableType,
+    InvokableOperator,
+    Lambda,
+    Block,
+    Parens,
+    And,
+    Or,
+    Dot,
+    Equals,
+}
+
 impl Parse for ExprPart {
     fn parse(lexer: LexerMut) -> ParseResult<Self> {
         #[allow(clippy::unnecessary_wraps)]
@@ -535,6 +556,25 @@ impl Parse for ExprPart {
 // TODO: remove attribute
 #[allow(unreachable_code, clippy::diverging_sub_expression)]
 impl ExprPart {
+    fn kind(&self) -> ExprPartKind {
+        match self {
+            ExprPart::Literal(Literal::StringLit(_)) => ExprPartKind::StringLit,
+            ExprPart::Literal(Literal::NumberLit(_)) => ExprPartKind::NumberLit,
+            ExprPart::Invokable(i) => match *i.name {
+                Name::Operator(_) => ExprPartKind::InvokableOperator,
+                Name::Ident(_) => ExprPartKind::InvokableIdent,
+                Name::Type(_) => ExprPartKind::InvokableType,
+            },
+            ExprPart::Lambda(_) => ExprPartKind::Lambda,
+            ExprPart::Block(_) => ExprPartKind::Block,
+            ExprPart::Parens(_) => ExprPartKind::Parens,
+            ExprPart::And => ExprPartKind::And,
+            ExprPart::Or => ExprPartKind::Or,
+            ExprPart::Dot => ExprPartKind::Dot,
+            ExprPart::Equals => ExprPartKind::Equals,
+        }
+    }
+
     fn into_operand(self, span: TextRange) -> Result<Expr, Error> {
         let expr_data = match self {
             ExprPart::Literal(l) => ExprData::Literal(l),
@@ -553,14 +593,14 @@ impl ExprPart {
         match self {
             ExprPart::Parens(_) | ExprPart::Dot | ExprPart::Equals => Ok(()),
 
-            ExprPart::Invokable(invk!(Operator(_)))
-            | ExprPart::Invokable(invk!(Type(_)))
-            | ExprPart::And
-            | ExprPart::Or => validate_operand(lhs.inner()),
+            ExprPart::Invokable(i) => match *i.name {
+                Name::Operator(_) | Name::Type(_) => validate_operand(lhs.inner()),
+                Name::Ident(_) => {
+                    Err(Error::ExpectedGot3("operator", ExprData::Invokable(i.clone())))
+                }
+            },
 
-            ExprPart::Invokable(i @ invk!(Ident(_))) => {
-                Err(Error::ExpectedGot3("operator", ExprData::Invokable(i.clone())))
-            }
+            ExprPart::And | ExprPart::Or => validate_operand(lhs.inner()),
 
             ExprPart::Lambda(l) => {
                 Err(Error::ExpectedGot3("operator", ExprData::Lambda(l.clone())))
@@ -579,11 +619,14 @@ impl ExprPart {
     fn into_operation(self, lhs: Expr, rhs: Expr) -> Result<Expr, Error> {
         let span = lhs.span().merge(rhs.span());
         let data = match self {
-            ExprPart::Invokable(invk!(Operator(operator))) => {
-                validate_operand(lhs.inner())?;
-                validate_operand(rhs.inner())?;
-                ExprData::Operation(Operation { operator, lhs, rhs })
-            }
+            ExprPart::Invokable(i) => match *i.name {
+                Name::Operator(operator) => {
+                    validate_operand(lhs.inner())?;
+                    validate_operand(rhs.inner())?;
+                    ExprData::Operation(Operation { operator, lhs, rhs })
+                }
+                _ => return Err(todo!()),
+            },
             ExprPart::And => {
                 validate_operand(lhs.inner())?;
                 validate_operand(rhs.inner())?;
@@ -621,10 +664,11 @@ impl ExprPart {
 
 impl ExprData {
     fn to_operator(&self) -> Option<Operator> {
-        match *self {
-            ExprData::Invokable(Invokable { name: (Name::Operator(o), _), .. }) => {
-                Some(o)
-            }
+        match self {
+            ExprData::Invokable(i) => match *i.name {
+                Name::Operator(o) => Some(o),
+                _ => None,
+            },
             _ => None,
         }
     }
