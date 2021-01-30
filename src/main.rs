@@ -35,7 +35,6 @@ fn main() {
         match parser::parse(program.tokens()) {
             Ok(parsed) => {
                 println!("Parsed output:");
-                println!("{:#?}", parsed);
                 println!("{}", parsed.to_string(&interner).trim_end());
                 println!("\n");
             }
