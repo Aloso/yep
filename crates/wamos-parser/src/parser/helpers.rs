@@ -1,11 +1,11 @@
-use super::{
-    items::{GenericParam, TypeArgument},
-    Error,
-};
-use super::{LexerMut, Parse, ParseResult};
+use super::items::{GenericParam, TypeArgument};
+use super::{Error, LexerMut, Parse, ParseResult};
 
-use crate::lexer::{Keyword, Punctuation, TokenData};
-use crate::text_range::TextRange;
+use crate::text_range::{Spanned, TextRange};
+use crate::{
+    lexer::{Keyword, Punctuation, TokenData},
+    text_range::SpannedList,
+};
 
 /// unwrap or return
 #[macro_export]
@@ -21,10 +21,7 @@ macro_rules! uoret {
 impl Parse for Punctuation {
     fn parse(lexer: LexerMut) -> ParseResult<Self> {
         Ok(match lexer.peek().data() {
-            TokenData::Punct(p) => {
-                let span = lexer.next().span();
-                Some((p, span))
-            }
+            TokenData::Punct(p) => Some(lexer.next().span.embed(p)),
             _ => None,
         })
     }
@@ -33,10 +30,7 @@ impl Parse for Punctuation {
 impl Parse for Keyword {
     fn parse(lexer: LexerMut) -> ParseResult<Self> {
         Ok(match lexer.peek().data() {
-            TokenData::Keyword(kw) => {
-                let span = lexer.next().span();
-                Some((kw, span))
-            }
+            TokenData::Keyword(kw) => Some(lexer.next().span.embed(kw)),
             _ => None,
         })
     }
@@ -46,14 +40,19 @@ pub(super) fn map<T, U>(
     f: impl Fn(LexerMut) -> ParseResult<T>,
     x: impl Fn(T) -> U + Copy,
 ) -> impl Fn(LexerMut) -> ParseResult<U> {
-    move |lexer| Ok(f(lexer)?.map(|(t, span)| (x(t), span)))
+    move |lexer| {
+        Ok(f(lexer)?.map(|t| {
+            let (t, span) = t.into_inner();
+            span.embed(x(t))
+        }))
+    }
 }
 
 pub(super) fn map2<T, U>(
     f: impl Fn(LexerMut) -> ParseResult<T>,
-    x: impl Fn(T, TextRange) -> (U, TextRange) + Copy,
+    x: impl Fn(Spanned<T>) -> Spanned<U> + Copy,
 ) -> impl Fn(LexerMut) -> ParseResult<U> {
-    move |lexer| Ok(f(lexer)?.map(|(t, span)| x(t, span)))
+    move |lexer| Ok(f(lexer)?.map(x))
 }
 
 pub(super) fn or2<T>(
@@ -87,32 +86,19 @@ pub(super) fn or6<T>(
     or2(or3(f1, f2, f3), or3(f4, f5, f6))
 }
 
-pub(super) fn expect2(
-    expected: impl Into<TokenData>,
-) -> impl FnOnce(LexerMut) -> ParseResult<()> {
-    move |lexer: LexerMut| {
-        Ok(if lexer.peek().data() == expected.into() {
-            let span = lexer.next().span();
-            Some(((), span))
-        } else {
-            None
-        })
-    }
-}
-
 pub(super) fn vec_separated<T>(
     lexer: LexerMut,
     mut f: impl FnMut(LexerMut) -> ParseResult<T>,
     separator: impl Into<TokenData> + Clone,
-) -> ParseResult<Vec<(T, TextRange)>> {
+) -> ParseResult<SpannedList<T>> {
     let mut lexer_clone = lexer.clone();
     let first = uoret!(f(&mut lexer_clone)?);
-    let mut span = first.1;
+    let mut span = first.span;
     let mut results = vec![first];
     loop {
         if lexer_clone.eat(separator.clone()).is_some() {
             if let Some(next) = f(&mut lexer_clone)? {
-                span = span.merge(next.1);
+                span = span.merge(next.span);
                 results.push(next);
                 continue;
             }
@@ -120,7 +106,7 @@ pub(super) fn vec_separated<T>(
         break;
     }
     *lexer = lexer_clone;
-    Ok(Some((results, span)))
+    Ok(Some(span.embed(results.into_boxed_slice())))
 }
 
 pub(super) fn enclosed<T>(
@@ -132,12 +118,12 @@ pub(super) fn enclosed<T>(
     move |lexer| {
         let span1: TextRange = uoret!(lexer.eat(left.clone()));
         let (inner, _) = match parser(lexer)? {
-            Some(inner) => inner,
+            Some(inner) => inner.into_inner(),
             None => return Err(on_error()),
         };
         let span2 = lexer.expect(right)?;
 
-        Ok(Some((inner, span1.merge(span2))))
+        Ok(Some(span1.merge(span2).embed(inner)))
     }
 }
 
@@ -147,7 +133,7 @@ pub(super) fn enclose_multiple<T>(
     separator: impl Into<TokenData> + Clone,
     right: impl Into<TokenData> + Clone,
     trailing_separator: bool,
-) -> impl FnOnce(LexerMut) -> ParseResult<Vec<(T, TextRange)>> {
+) -> impl FnOnce(LexerMut) -> ParseResult<SpannedList<T>> {
     let parser_inner = move |lexer: LexerMut| {
         let items = vec_separated(lexer, parser.clone(), separator.clone())?;
         match items {
@@ -171,7 +157,7 @@ pub(super) fn enclose_multiple_expect<T>(
     separator: impl Into<TokenData> + Clone,
     right: impl Into<TokenData> + Clone,
     trailing_separator: bool,
-) -> impl FnOnce(LexerMut) -> Result<(Vec<(T, TextRange)>, TextRange), Error> {
+) -> impl FnOnce(LexerMut) -> Result<Spanned<SpannedList<T>>, Error> {
     move |lexer| {
         let parser =
             enclose_multiple(parser, left.clone(), separator, right, trailing_separator);
@@ -182,9 +168,7 @@ pub(super) fn enclose_multiple_expect<T>(
     }
 }
 
-pub(super) fn parse_generics(
-    lexer: LexerMut,
-) -> ParseResult<Vec<(GenericParam, TextRange)>> {
+pub(super) fn parse_generics(lexer: LexerMut) -> ParseResult<SpannedList<GenericParam>> {
     enclose_multiple(
         GenericParam::parse,
         Punctuation::OpenBracket,
@@ -196,7 +180,7 @@ pub(super) fn parse_generics(
 
 pub(super) fn parse_type_arguments(
     lexer: LexerMut,
-) -> ParseResult<Vec<(TypeArgument, TextRange)>> {
+) -> ParseResult<SpannedList<TypeArgument>> {
     enclose_multiple(
         TypeArgument::parse,
         Punctuation::OpenBracket,

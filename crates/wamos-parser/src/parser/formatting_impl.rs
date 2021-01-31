@@ -164,52 +164,42 @@ impl FancyFormat for TypeArgument {
 
 impl FancyFormat for Expr {
     fn fmt_impl(&self, buf: &mut String, indent: usize, interner: &StringInterner) {
-        self.inner.fmt(buf, indent, interner)
-    }
-
-    fn is_single_line(&self) -> bool { self.inner.is_single_line() }
-
-    fn is_empty(&self) -> bool { self.inner.is_empty() }
-}
-
-impl FancyFormat for ExprData {
-    fn fmt_impl(&self, buf: &mut String, indent: usize, interner: &StringInterner) {
         match self {
-            ExprData::Invokable(x) => x.fmt(buf, indent, interner),
-            ExprData::Literal(x) => x.fmt(buf, indent, interner),
-            ExprData::ParenCall(x) => x.fmt(buf, indent, interner),
-            ExprData::MemberCall(x) => x.fmt(buf, indent, interner),
-            ExprData::Operation(x) => x.fmt(buf, indent, interner),
-            ExprData::ShortcircuitingOp(x) => x.fmt(buf, indent, interner),
-            ExprData::Assignment(x) => x.fmt(buf, indent, interner),
-            ExprData::TypeAscription(x) => x.fmt(buf, indent, interner),
-            ExprData::Statement(x) => x.fmt(buf, indent, interner),
-            ExprData::Lambda(x) => x.fmt(buf, indent, interner),
-            ExprData::Block(x) => x.fmt(buf, indent, interner),
-            ExprData::Tuple(x) => x.fmt(buf, indent, interner),
-            ExprData::Empty(x) => x.fmt(buf, indent, interner),
-            ExprData::Declaration(x) => x.fmt(buf, indent, interner),
-            ExprData::Case(x) => x.fmt(buf, indent, interner),
+            Expr::Invokable(x) => x.fmt(buf, indent, interner),
+            Expr::Literal(x) => x.fmt(buf, indent, interner),
+            Expr::ParenCall(x) => x.fmt(buf, indent, interner),
+            Expr::MemberCall(x) => x.fmt(buf, indent, interner),
+            Expr::Operation(x) => x.fmt(buf, indent, interner),
+            Expr::ShortcircuitingOp(x) => x.fmt(buf, indent, interner),
+            Expr::Assignment(x) => x.fmt(buf, indent, interner),
+            Expr::TypeAscription(x) => x.fmt(buf, indent, interner),
+            Expr::Statement(x) => x.fmt(buf, indent, interner),
+            Expr::Lambda(x) => x.fmt(buf, indent, interner),
+            Expr::Block(x) => x.fmt(buf, indent, interner),
+            Expr::Tuple(x) => x.fmt(buf, indent, interner),
+            Expr::Empty(x) => x.fmt(buf, indent, interner),
+            Expr::Declaration(x) => x.fmt(buf, indent, interner),
+            Expr::Case(x) => x.fmt(buf, indent, interner),
         }
     }
 
     fn is_single_line(&self) -> bool {
         match self {
-            ExprData::Invokable(x) => x.is_single_line(),
-            ExprData::Literal(x) => x.is_single_line(),
-            ExprData::ParenCall(x) => x.is_single_line(),
-            ExprData::MemberCall(x) => x.is_single_line(),
-            ExprData::Operation(x) => x.is_single_line(),
-            ExprData::ShortcircuitingOp(x) => x.is_single_line(),
-            ExprData::Assignment(x) => x.is_single_line(),
-            ExprData::TypeAscription(x) => x.is_single_line(),
-            ExprData::Statement(x) => x.is_single_line(),
-            ExprData::Lambda(x) => x.is_single_line(),
-            ExprData::Block(x) => x.is_single_line(),
-            ExprData::Tuple(x) => x.is_single_line(),
-            ExprData::Empty(x) => x.is_single_line(),
-            ExprData::Declaration(x) => x.is_single_line(),
-            ExprData::Case(x) => x.is_single_line(),
+            Expr::Invokable(x) => x.is_single_line(),
+            Expr::Literal(x) => x.is_single_line(),
+            Expr::ParenCall(x) => x.is_single_line(),
+            Expr::MemberCall(x) => x.is_single_line(),
+            Expr::Operation(x) => x.is_single_line(),
+            Expr::ShortcircuitingOp(x) => x.is_single_line(),
+            Expr::Assignment(x) => x.is_single_line(),
+            Expr::TypeAscription(x) => x.is_single_line(),
+            Expr::Statement(x) => x.is_single_line(),
+            Expr::Lambda(x) => x.is_single_line(),
+            Expr::Block(x) => x.is_single_line(),
+            Expr::Tuple(x) => x.is_single_line(),
+            Expr::Empty(x) => x.is_single_line(),
+            Expr::Declaration(x) => x.is_single_line(),
+            Expr::Case(x) => x.is_single_line(),
         }
     }
 }
@@ -327,15 +317,15 @@ impl_fancy_format_struct! {
 
 impl FancyFormat for Block {
     fn fmt_impl(&self, buf: &mut String, indent: usize, interner: &StringInterner) {
-        if FancyList(self.exprs.as_slice()).is_empty() {
+        if FancyList(self.exprs.as_ref()).is_empty() {
             buf.push_str("Block");
         } else {
-            FancyKV("Block", FancyList(self.exprs.as_slice())).fmt(buf, indent, interner)
+            FancyKV("Block", FancyList(self.exprs.as_ref())).fmt(buf, indent, interner)
         }
     }
 
     fn is_single_line(&self) -> bool {
-        let list = FancyList(self.exprs.as_slice());
+        let list = FancyList(self.exprs.as_ref());
         list.is_empty() || list.is_single_line()
     }
 
@@ -344,15 +334,15 @@ impl FancyFormat for Block {
 
 impl FancyFormat for Parens {
     fn fmt_impl(&self, buf: &mut String, indent: usize, interner: &StringInterner) {
-        if FancyList(self.exprs.as_slice()).is_empty() {
+        if FancyList(self.exprs.as_ref()).is_empty() {
             buf.push_str("Parens");
         } else {
-            FancyKV("Parens", FancyList(self.exprs.as_slice())).fmt(buf, indent, interner)
+            FancyKV("Parens", FancyList(self.exprs.as_ref())).fmt(buf, indent, interner)
         }
     }
 
     fn is_single_line(&self) -> bool {
-        let list = FancyList(self.exprs.as_slice());
+        let list = FancyList(self.exprs.as_ref());
         list.is_empty() || list.is_single_line()
     }
 

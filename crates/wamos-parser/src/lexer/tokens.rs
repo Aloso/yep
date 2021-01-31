@@ -3,7 +3,7 @@ use std::{fmt, marker::PhantomData};
 use logos::Lexer;
 use string_interner::StringInterner;
 
-use crate::text_range::TextRange;
+use crate::text_range::{Spanned, TextRange};
 
 use super::idents::StringLiteral;
 use super::syntax::{parse_keyword, IToken};
@@ -12,25 +12,7 @@ use super::{numbers, Ident, Keyword, NumberLiteral, Operator, Punctuation, Upper
 #[derive(Copy, Clone)]
 pub struct Token<'a> {
     pub(super) data: TokenData,
-    span: TextRange,
     lt: PhantomData<&'a str>,
-}
-
-pub struct LifelessToken {
-    pub data: TokenData,
-    pub span: TextRange,
-}
-
-impl Token<'_> {
-    pub fn lifeless(&self) -> LifelessToken {
-        LifelessToken { data: self.data, span: self.span }
-    }
-}
-
-impl LifelessToken {
-    pub fn to_static_token(&self) -> Token<'static> {
-        Token { data: self.data, span: self.span, lt: PhantomData }
-    }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -55,8 +37,8 @@ pub enum LexError {
 }
 
 impl<'a> Token<'a> {
-    fn new(data: TokenData, span: impl Into<TextRange>) -> Self {
-        Self { data, span: span.into(), lt: PhantomData }
+    pub(super) fn new(data: TokenData, span: impl Into<TextRange>) -> Spanned<Self> {
+        Spanned::new(Self { data, lt: PhantomData }, span.into())
     }
 
     pub fn data(&self) -> TokenData { self.data }
@@ -82,10 +64,7 @@ impl<'a> Token<'a> {
         }
     }
 
-    pub fn span(&self) -> TextRange { self.span }
-
     pub fn debug(&self, text: &str, f: &mut fmt::Formatter) -> fmt::Result {
-        let text = &text[self.span];
         if f.alternate() {
             match &self.data {
                 TokenData::Punct(_) => write!(f, "`{}`", text),
@@ -104,6 +83,25 @@ impl<'a> Token<'a> {
     }
 
     pub fn debug_to_string(&self, text: &str, alternate: bool) -> String {
+        if alternate {
+            format!("{:#?}", TokenFormatting { token: self, text })
+        } else {
+            format!("{:?}", TokenFormatting { token: self, text })
+        }
+    }
+}
+
+impl Spanned<Token<'_>> {
+    pub fn debug(&self, text: &str, f: &mut fmt::Formatter) -> fmt::Result {
+        self.inner.debug(&text[self.span], f)?;
+        if f.alternate() {
+            write!(f, " @ {:?}", self.span)?;
+        }
+        Ok(())
+    }
+
+    pub fn debug_to_string(&self, text: &str, alternate: bool) -> String {
+        let text = &text[self.span];
         if alternate {
             format!("{:#?}", TokenFormatting { token: self, text })
         } else {
@@ -147,9 +145,12 @@ impl From<LexError> for TokenData {
     fn from(x: LexError) -> Self { TokenData::Error(x) }
 }
 
-pub(super) fn lex<'a>(text: &'a str, interner: &mut StringInterner) -> Vec<Token<'a>> {
+pub(super) fn lex<'a>(
+    text: &'a str,
+    interner: &mut StringInterner,
+) -> Vec<Spanned<Token<'a>>> {
     let mut was_word = false;
-    let mut v: Vec<Token<'a>> = Vec::new();
+    let mut v: Vec<Spanned<Token<'a>>> = Vec::new();
 
     for (t, span) in Lexer::<IToken>::new(text).spanned() {
         let span = TextRange::from(span);
@@ -214,12 +215,6 @@ impl fmt::Debug for TokenFormatting<'_> {
 
 impl fmt::Debug for Token<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?} @ {:?}", self.span, &self.data)
-    }
-}
-
-impl fmt::Debug for LifelessToken {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?} @ {:?}", self.span, &self.data)
+        fmt::Debug::fmt(&self.data, f)
     }
 }

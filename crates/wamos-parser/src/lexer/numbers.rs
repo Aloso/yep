@@ -39,8 +39,8 @@ use super::tokens::{LexError, TokenData};
 /// ```
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum NumberLiteral {
-    Int(i128),
-    UInt(u128),
+    Int(i64),
+    UInt(u64),
     Float(f64),
 }
 
@@ -316,10 +316,7 @@ mod tests {
         assert_ok!("+123", UInt(123));
         assert_ok!("-234", Int(-234));
         assert_ok!("1_2__34_", Int(1234));
-        assert_ok!(
-            "+340_282_366_920_938_463_463_374_607_431_768_211_455",
-            UInt(u128::MAX),
-        );
+        assert_ok!("+18_446_744_073_709_551_615", UInt(u64::MAX),);
     }
 
     #[test]
@@ -350,30 +347,40 @@ mod tests {
 
     #[test]
     fn invalid_integers() {
-        assert_err!("+-0", "expected number, got [InvalidNum@`+-0`]");
-        assert_err!("--0", "expected number, got [InvalidNum@`--0`]");
+        assert_err!("+-0", "expected number, got [InvalidNum@`+-0` @ 0..3]");
+        assert_err!("--0", "expected number, got [InvalidNum@`--0` @ 0..3]");
         assert_err!("", "expected exactly 1 token, got []");
-        assert_err!("+", "expected number, got [o`+`]");
-        assert_err!("_", "expected number, got [`_`]");
-        assert_err!("0x_", "expected number, got [InvalidNum@`0x_`]");
-        assert_err!("0xF_G", "expected number, got [InvalidNum@`0xF_G`]");
-        assert_err!("0b012", "expected number, got [InvalidNum@`0b012`]");
+        assert_err!("+", "expected number, got [o`+` @ 0..1]");
+        assert_err!("_", "expected number, got [`_` @ 0..1]");
+        assert_err!("0x_", "expected number, got [InvalidNum@`0x_` @ 0..3]");
+        assert_err!("0xF_G", "expected number, got [InvalidNum@`0xF_G` @ 0..5]");
+        assert_err!("0b012", "expected number, got [InvalidNum@`0b012` @ 0..5]");
     }
 
     #[test]
     fn invalid_floats() {
-        assert_err!(".", "expected number, got [`.`]");
-        assert_err!("._1", "expected exactly 1 token, got [`.` InvalidNum@`_1`]");
-        assert_err!("_.1", "expected exactly 1 token, got [`_` Float(0.1)@`.1`]");
-        assert_err!("-.1", "expected number, got [NoWS@`-.1`]");
-        assert_err!("1e", "expected number, got [InvalidNum@`1e`]");
-        assert_err!("1e__", "expected number, got [InvalidNum@`1e__`]");
-        assert_err!("1e_+1", "expected number, got [InvalidNum@`1e_+1`]");
+        assert_err!(".", "expected number, got [`.` @ 0..1]");
+        assert_err!(
+            "._1",
+            "expected exactly 1 token, got [`.` @ 0..1 InvalidNum@`_1` @ 1..3]"
+        );
+        assert_err!(
+            "_.1",
+            "expected exactly 1 token, got [`_` @ 0..1 Float(0.1)@`.1` @ 1..3]"
+        );
+        assert_err!("-.1", "expected number, got [NoWS@`-.1` @ 0..3]");
+        assert_err!("1e", "expected number, got [InvalidNum@`1e` @ 0..2]");
+        assert_err!("1e__", "expected number, got [InvalidNum@`1e__` @ 0..4]");
+        assert_err!("1e_+1", "expected number, got [InvalidNum@`1e_+1` @ 0..5]");
         assert_err!(
             "0._1",
-            "expected exactly 1 token, got [Int(0)@`0` `.` InvalidNum@`_1`]"
+            "expected exactly 1 token, got [Int(0)@`0` @ 0..1 `.` @ 1..2 \
+             InvalidNum@`_1` @ 2..4]"
         );
-        assert_err!(".12345e2345", "expected number, got [InvalidNum@`.12345e2345`]",);
-        assert_err!("0f.1", "expected number, got [InvalidNum@`0f.1`]");
+        assert_err!(
+            ".12345e2345",
+            "expected number, got [InvalidNum@`.12345e2345` @ 0..11]",
+        );
+        assert_err!("0f.1", "expected number, got [InvalidNum@`0f.1` @ 0..4]");
     }
 }

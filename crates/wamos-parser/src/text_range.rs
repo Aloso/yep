@@ -1,7 +1,7 @@
+use std::cmp::Ordering;
+use std::convert::TryInto;
+use std::fmt;
 use std::ops::{Deref, Index, Range};
-use std::{cmp::Ordering, convert::TryInto, fmt};
-
-use crate::parser::expr::Expr;
 
 
 #[derive(Clone, Copy, PartialEq, Eq, Default, Hash)]
@@ -27,19 +27,14 @@ impl TextRange {
         TextRange::new(self.start.min(other.start), self.end.max(other.end))
     }
 
-    pub fn merge_if<T>(&self, other: &Option<(T, Self)>) -> Self {
+    pub fn merge_if<T>(&self, other: &Option<Spanned<T>>) -> Self {
         match other {
-            Some((_, other)) => self.merge(*other),
+            Some(t) => self.merge(t.span),
             None => *self,
         }
     }
 
-    pub fn merge_if_expr(&self, other: &Option<Expr>) -> Self {
-        match other {
-            Some(e) => self.merge(e.span()),
-            None => *self,
-        }
-    }
+    pub fn embed<T>(self, inner: T) -> Spanned<T> { Spanned::new(inner, self) }
 }
 
 impl fmt::Debug for TextRange {
@@ -83,20 +78,24 @@ impl Index<TextRange> for str {
 }
 
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 pub struct Spanned<T> {
-    inner: T,
-    span: TextRange,
+    pub inner: T,
+    pub span: TextRange,
 }
 
 impl<T> Spanned<T> {
     pub fn new(inner: T, span: TextRange) -> Self { Self { inner, span } }
 
-    pub fn span(&self) -> TextRange { self.span }
-
-    pub fn inner(&self) -> &T { &self.inner }
-
     pub fn into_inner(self) -> (T, TextRange) { (self.inner, self.span) }
+
+    pub fn map<F: FnMut(T) -> U, U>(self, mut f: F) -> Spanned<U> {
+        Spanned::new(f(self.inner), self.span)
+    }
+
+    pub fn map_ref<F: FnMut(&T) -> U, U>(&self, mut f: F) -> Spanned<U> {
+        Spanned::new(f(&self.inner), self.span)
+    }
 }
 
 impl<T> Deref for Spanned<T> {
@@ -116,3 +115,6 @@ impl<T: fmt::Debug> fmt::Debug for Spanned<T> {
 impl<T> From<(T, TextRange)> for Spanned<T> {
     fn from((inner, span): (T, TextRange)) -> Self { Self { inner, span } }
 }
+
+// TODO: Use something like smallvec or tinyvec instead
+pub type SpannedList<T> = Box<[Spanned<T>]>;

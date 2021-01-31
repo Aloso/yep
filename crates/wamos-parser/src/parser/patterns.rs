@@ -1,6 +1,6 @@
 use crate::lexer::Ident;
 
-use super::expr::{ExprData, Literal, TypeAscription};
+use super::expr::{Expr, Literal, TypeAscription};
 
 #[derive(Debug, Clone)]
 pub enum Pattern {
@@ -38,5 +38,5 @@ pub struct EnumPattern {
 #[derive(Debug, Clone)]
 pub struct GuardPattern {
     pub pattern: Box<Pattern>,
-    pub guard: ExprData,
+    pub guard: Expr,
 }

@@ -1,14 +1,14 @@
 use std::fmt;
 use std::iter::Peekable;
 
-use crate::text_range::TextRange;
+use crate::text_range::Spanned;
 use crate::uoret;
 use crate::{
     lexer::{
         Ident, Keyword, NumberLiteral, Operator, Punctuation, StringLiteral, TokenData,
         UpperIdent,
     },
-    text_range::Spanned,
+    text_range::SpannedList,
 };
 
 use super::helpers::*;
@@ -16,8 +16,9 @@ use super::items::*;
 use super::patterns::Pattern;
 use super::{Error, LexerMut, Parse, ParseResult};
 
+/// 64 bytes
 #[derive(Debug, Clone)]
-pub enum ExprData {
+pub enum Expr {
     Invokable(Invokable),
     Literal(Literal),
     ParenCall(ParenCall),
@@ -26,7 +27,7 @@ pub enum ExprData {
     ShortcircuitingOp(ScOperation),
     Assignment(Assignment),
     TypeAscription(TypeAscription),
-    Statement(Expr),
+    Statement(Box<Spanned<Expr>>),
     Lambda(Lambda),
     Block(Block),
     Tuple(Parens),
@@ -36,35 +37,11 @@ pub enum ExprData {
     Case(Case),
 }
 
-#[derive(Clone)]
-pub struct Expr {
-    pub(super) inner: Box<Spanned<ExprData>>,
-}
-
-impl From<Spanned<ExprData>> for Expr {
-    fn from(e: Spanned<ExprData>) -> Self { Expr { inner: Box::new(e) } }
-}
-
-impl fmt::Debug for Expr {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result { self.inner.fmt(f) }
-}
-
-impl Expr {
-    pub fn new(data: ExprData, span: TextRange) -> Self {
-        Self { inner: Box::new(Spanned::new(data, span)) }
-    }
-
-    pub fn inner(&self) -> &ExprData { self.inner.inner() }
-
-    pub fn span(&self) -> TextRange { self.inner.span() }
-
-    pub fn into_inner(self) -> (ExprData, TextRange) { self.inner.into_inner() }
-}
-
+/// 48 bytes
 #[derive(Debug, Clone)]
 pub struct Invokable {
     pub name: Spanned<Name>,
-    pub generics: Vec<(TypeArgument, TextRange)>,
+    pub generics: Spanned<SpannedList<TypeArgument>>,
 }
 
 #[derive(Copy, Clone)]
@@ -84,35 +61,35 @@ impl fmt::Debug for Literal {
 
 #[derive(Debug, Clone)]
 pub struct ParenCall {
-    pub receiver: Expr,
-    pub args: Option<Vec<(FunCallArgument, TextRange)>>,
+    pub receiver: Box<Spanned<Expr>>,
+    pub args: Option<SpannedList<FunCallArgument>>,
 }
 
 #[derive(Debug, Clone)]
 pub struct MemberCall {
-    pub receiver: Expr,
+    pub receiver: Box<Spanned<Expr>>,
     pub member: Invokable,
 }
 
 #[derive(Debug, Clone)]
 pub struct Operation {
     pub operator: Operator,
-    pub lhs: Expr,
-    pub rhs: Expr,
+    pub lhs: Box<Spanned<Expr>>,
+    pub rhs: Box<Spanned<Expr>>,
 }
 
 /// Short-circuiting
 #[derive(Debug, Clone)]
 pub struct ScOperation {
     pub operator: ScOperator,
-    pub lhs: Expr,
-    pub rhs: Expr,
+    pub lhs: Box<Spanned<Expr>>,
+    pub rhs: Box<Spanned<Expr>>,
 }
 
 #[derive(Debug, Clone)]
 pub struct Assignment {
-    pub lhs: Expr,
-    pub rhs: Expr,
+    pub lhs: Box<Spanned<Expr>>,
+    pub rhs: Box<Spanned<Expr>>,
 }
 
 /// Short-circuiting
@@ -122,26 +99,28 @@ pub enum ScOperator {
     Or,
 }
 
+/// 56 bytes
 #[derive(Debug, Clone)]
 pub struct TypeAscription {
-    pub expr: Expr,
+    pub expr: Box<Spanned<Expr>>,
     pub ty: NamedType,
 }
 
 #[derive(Debug, Clone)]
 pub struct Lambda {
-    pub args: (Vec<(LambdaArgument, TextRange)>, TextRange),
-    pub body: Expr,
+    pub args: Spanned<SpannedList<LambdaArgument>>,
+    pub body: Box<Spanned<Expr>>,
 }
 
 #[derive(Debug, Clone)]
 pub struct Block {
-    pub exprs: Vec<Expr>,
+    pub exprs: SpannedList<Expr>,
+    pub ends_with_semicolon: bool,
 }
 
 #[derive(Debug, Clone)]
 pub struct Parens {
-    pub exprs: Vec<(FunCallArgument, TextRange)>,
+    pub exprs: SpannedList<FunCallArgument>,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -150,20 +129,20 @@ pub struct Empty;
 #[derive(Debug, Clone)]
 pub struct Declaration {
     pub decl_kind: DeclKind,
-    pub name: Ident,
-    pub value: Expr,
+    pub name: Spanned<Ident>,
+    pub value: Box<Spanned<Expr>>,
 }
 
 #[derive(Debug, Clone)]
 pub struct Case {
-    pub expr: Expr,
+    pub expr: Box<Spanned<Expr>>,
     pub match_arms: Vec<MatchArm>,
 }
 
 #[derive(Debug, Clone)]
 pub struct FunCallArgument {
-    pub name: Option<(Ident, TextRange)>,
-    pub expr: Spanned<ExprData>,
+    pub name: Option<Spanned<Ident>>,
+    pub expr: Spanned<Expr>,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -174,17 +153,17 @@ pub enum DeclKind {
 
 #[derive(Debug, Clone)]
 pub struct LambdaArgument {
-    pub name: (Ident, TextRange),
-    pub ty: Option<(NamedType, TextRange)>,
+    pub name: Spanned<Ident>,
+    pub ty: Option<Spanned<NamedType>>,
 }
 
 #[derive(Debug, Clone)]
 pub struct MatchArm {
     pub pattern: Pattern,
-    pub expr: ExprData,
+    pub expr: Expr,
 }
 
-impl Parse for ExprData {
+impl Parse for Expr {
     fn parse(lexer: LexerMut) -> ParseResult<Self> {
         let mut parts = Vec::new();
 
@@ -199,30 +178,30 @@ impl Parse for ExprData {
         Ok(if parts.is_empty() {
             None
         } else if parts.len() == 1 {
-            let (expr, span) = parts.pop().unwrap();
-            let expr = match expr {
-                ExprPart::Literal(o) => ExprData::Literal(o),
-                ExprPart::Invokable(o) => ExprData::Invokable(o),
-                ExprPart::Lambda(o) => ExprData::Lambda(o),
-                ExprPart::Block(o) => ExprData::Block(o),
-                ExprPart::Parens(o) => ExprData::Tuple(o),
+            let (expr, span) = parts.pop().unwrap().into_inner();
+            let expr_data = match expr {
+                ExprPart::Literal(o) => Expr::Literal(o),
+                ExprPart::Invokable(o) => Expr::Invokable(o),
+                ExprPart::Lambda(o) => Expr::Lambda(o),
+                ExprPart::Block(o) => Expr::Block(o),
+                ExprPart::Parens(o) => Expr::Tuple(o),
                 ExprPart::And | ExprPart::Or | ExprPart::Dot | ExprPart::Equals => {
                     return Ok(None)
                 }
             };
-            Some((expr, span))
+            Some(span.embed(expr_data))
         } else {
             let expr = pratt_parser(&mut parts.into_iter().peekable(), 0)?;
-            Some(expr.into_inner())
+            Some(expr)
         })
     }
 }
 
 /// <https://matklad.github.io/2020/04/13/simple-but-powerful-pratt-parsing.html>
 fn pratt_parser(
-    expr_parts: &mut Peekable<impl Iterator<Item = (ExprPart, TextRange)>>,
+    expr_parts: &mut Peekable<impl Iterator<Item = Spanned<ExprPart>>>,
     min_bp: u8,
-) -> Result<Expr, Error> {
+) -> Result<Spanned<Expr>, Error> {
     fn postfix_binding_power(op: &ExprPart) -> Option<(u8, ())> {
         match op.kind() {
             ExprPartKind::InvokableType => Some((11, ())),
@@ -242,34 +221,34 @@ fn pratt_parser(
         }
     }
 
-    let (lhs, lhs_span) = expr_parts.next().ok_or(Error::Expected("expression"))?;
-    let mut lhs = lhs.into_operand(lhs_span)?;
+    let lhs = expr_parts.next().ok_or(Error::Expected("expression"))?;
+    let mut lhs = lhs.span.embed(lhs.inner.into_operand()?);
 
     loop {
-        let (op, _) = match expr_parts.peek() {
+        let op = match expr_parts.peek() {
             None => break,
             Some(op) => op,
         };
-        op.assert_is_operator(&lhs)?;
+        op.assert_is_operator(&lhs.inner)?;
 
-        if let Some((l_bp, ())) = postfix_binding_power(op) {
+        if let Some((l_bp, ())) = postfix_binding_power(&op.inner) {
             if l_bp < min_bp {
                 break;
             }
-            let (op, op_span) = expr_parts.next().unwrap();
-            let lhs_span = lhs.span();
+            let op = expr_parts.next().unwrap();
+            let lhs_span = lhs.span;
 
-            let lhs_data = match op {
-                ExprPart::Parens(tuple) => ExprData::ParenCall(ParenCall {
-                    receiver: lhs,
+            let lhs_data = match op.inner {
+                ExprPart::Parens(tuple) => Expr::ParenCall(ParenCall {
+                    receiver: Box::new(lhs),
                     args: Some(tuple.into_fun_call_args()),
                 }),
                 ExprPart::Invokable(Invokable { name, generics: args }) => {
                     match name.into_inner() {
                         (Name::Type(name), name_span) => {
                             let name = Spanned::new(name, name_span);
-                            ExprData::TypeAscription(TypeAscription {
-                                expr: lhs,
+                            Expr::TypeAscription(TypeAscription {
+                                expr: Box::new(lhs),
                                 ty: NamedType { name, args },
                             })
                         }
@@ -278,7 +257,7 @@ fn pratt_parser(
                 }
                 t => panic!("Unexpected token {:?}", t),
             };
-            lhs = Expr::new(lhs_data, lhs_span.merge(op_span));
+            lhs = lhs_span.merge(op.span).embed(lhs_data);
             continue;
         }
 
@@ -286,10 +265,10 @@ fn pratt_parser(
             if l_bp < min_bp {
                 break;
             }
-            let (op, _) = expr_parts.next().unwrap();
+            let op = expr_parts.next().unwrap();
 
             let rhs = pratt_parser(expr_parts, r_bp)?;
-            lhs = op.into_operation(lhs, rhs)?;
+            lhs = op.inner.into_operation(lhs, rhs)?;
             continue;
         }
 
@@ -312,19 +291,16 @@ impl Parse for Invokable {
     fn parse(lexer: LexerMut) -> ParseResult<Self> {
         let name = uoret!(Name::parse(lexer)?);
         let generics = parse_type_arguments(lexer)?;
-        let span = name.1.merge_if(&generics);
-        let (generics, _) = generics.unwrap_or_default();
-        Ok(Some((Invokable { name: name.into(), generics }, span)))
+        let span = name.span.merge_if(&generics);
+        let generics = generics.unwrap_or_default();
+        Ok(Some(span.embed(Invokable { name, generics })))
     }
 }
 
 impl Parse for Operator {
     fn parse(lexer: LexerMut) -> ParseResult<Self> {
         Ok(match lexer.peek().data() {
-            TokenData::Operator(o) => {
-                let span = lexer.next().span();
-                Some((o, span))
-            }
+            TokenData::Operator(o) => Some(lexer.next().span.embed(o)),
             _ => None,
         })
     }
@@ -340,12 +316,12 @@ impl Parse for Lambda {
             true,
         )(lexer)?);
 
-        let body = or2(map(Block::parse, ExprData::Block), ExprData::parse)(lexer)?;
-        let body: Expr = Spanned::from(body.ok_or_else(|| todo!())?).into();
+        let body = or2(map(Block::parse, Expr::Block), Expr::parse)(lexer)?;
+        let body = Box::new(body.ok_or_else(|| todo!())?);
 
-        let span = args.1.merge(body.span());
+        let span = args.span.merge(body.span);
 
-        Ok(Some((Lambda { args, body }, span)))
+        Ok(Some(span.embed(Lambda { args, body })))
     }
 }
 
@@ -353,24 +329,14 @@ impl Parse for Block {
     fn parse(lexer: LexerMut) -> ParseResult<Self> {
         let span1 = uoret!(lexer.eat(Punctuation::OpenBrace));
 
-        let (mut exprs, _) =
-            vec_separated(lexer, ExprData::parse, Punctuation::Semicolon)?
-                .map(|(v, s)| {
-                    let v = v
-                        .into_iter()
-                        .map(Spanned::from)
-                        .map(Expr::from)
-                        .collect::<Vec<Expr>>();
-                    (v, s)
-                })
-                .unwrap_or_default();
+        let exprs = vec_separated(lexer, Expr::parse, Punctuation::Semicolon)?
+            .unwrap_or_default()
+            .inner;
 
-        if let Some(span) = lexer.eat(Punctuation::Semicolon) {
-            exprs.push(Expr::new(ExprData::Empty(Empty), span));
-        }
+        let ends_with_semicolon = lexer.eat(Punctuation::Semicolon).is_some();
 
         let span2 = lexer.expect(Punctuation::CloseBrace)?;
-        Ok(Some((Block { exprs }, span1.merge(span2))))
+        Ok(Some(span1.merge(span2).embed(Block { exprs, ends_with_semicolon })))
     }
 }
 
@@ -378,42 +344,41 @@ impl Parse for Parens {
     fn parse(lexer: LexerMut) -> ParseResult<Self> {
         let span1 = uoret!(lexer.eat(Punctuation::OpenParen));
 
-        let (exprs, _) =
-            vec_separated(lexer, FunCallArgument::parse, Punctuation::Comma)?
-                .unwrap_or_default();
+        let exprs = vec_separated(lexer, FunCallArgument::parse, Punctuation::Comma)?
+            .unwrap_or_default()
+            .inner;
 
         if !exprs.is_empty() {
             let _ = lexer.eat(Punctuation::Comma);
         }
 
         let span2 = lexer.expect(Punctuation::CloseParen)?;
-        Ok(Some((Parens { exprs }, span1.merge(span2))))
+        Ok(Some(span1.merge(span2).embed(Parens { exprs })))
     }
 }
 
 impl Parens {
-    fn into_fun_call_args(self) -> Vec<(FunCallArgument, TextRange)> { self.exprs }
+    fn into_fun_call_args(self) -> SpannedList<FunCallArgument> { self.exprs }
 }
 
 impl Parse for LambdaArgument {
     fn parse(lexer: LexerMut) -> ParseResult<Self> {
         let name = uoret!(Ident::parse(lexer)?);
         let ty = NamedType::parse(lexer)?;
-        let span = name.1.merge_if(&ty);
-        Ok(Some((LambdaArgument { name, ty }, span)))
+        let span = name.span.merge_if(&ty);
+        Ok(Some(span.embed(LambdaArgument { name, ty })))
     }
 }
 
 impl Parse for Declaration {
     fn parse(lexer: LexerMut) -> ParseResult<Self> {
-        let (decl_kind, span) = uoret!(DeclKind::parse(lexer)?);
-        let (name, _) = Ident::parse_expect(lexer, "variable name")?;
+        let (decl_kind, span) = uoret!(DeclKind::parse(lexer)?).into_inner();
+        let name = Ident::parse_expect(lexer, "variable name")?;
         lexer.expect(Punctuation::Equals)?;
-        let value: Expr =
-            Spanned::from(ExprData::parse_expect(lexer, "expression")?).into();
-        let span = span.merge(value.span());
+        let value = Box::new(Expr::parse_expect(lexer, "expression")?);
+        let span = span.merge(value.span);
 
-        Ok(Some((Declaration { decl_kind, name, value }, span)))
+        Ok(Some(span.embed(Declaration { decl_kind, name, value })))
     }
 }
 
@@ -424,8 +389,7 @@ impl Parse for DeclKind {
             TokenData::Keyword(Keyword::Var) => DeclKind::Var,
             _ => return Ok(None),
         };
-        let span = lexer.next().span();
-        Ok(Some((decl_kind, span)))
+        Ok(Some(lexer.next().span.embed(decl_kind)))
     }
 }
 
@@ -436,28 +400,25 @@ impl Parse for FunCallArgument {
 
             let name = uoret!(Ident::parse(&mut lexer_clone)?);
             uoret!(lexer_clone.eat(Punctuation::Colon));
-            let expr = ExprData::parse_expect(&mut lexer_clone, "expression")?;
+            let expr = Expr::parse_expect(&mut lexer_clone, "expression")?;
 
             *lexer = lexer_clone;
-            let span = name.1.merge(expr.1);
-            Ok(Some((FunCallArgument { name: Some(name), expr: expr.into() }, span)))
+            let span = name.span.merge(expr.span);
+            Ok(Some(span.embed(FunCallArgument { name: Some(name), expr })))
         }
 
-        fn wrap_expr(expr: ExprData, span: TextRange) -> (FunCallArgument, TextRange) {
-            (FunCallArgument { name: None, expr: Spanned::new(expr, span) }, span)
+        fn wrap_expr(expr: Spanned<Expr>) -> Spanned<FunCallArgument> {
+            expr.span.embed(FunCallArgument { name: None, expr })
         }
 
-        or2(parse_with_name, map2(ExprData::parse, wrap_expr))(lexer)
+        or2(parse_with_name, map2(Expr::parse, wrap_expr))(lexer)
     }
 }
 
 impl Parse for StringLiteral {
     fn parse(lexer: LexerMut) -> ParseResult<Self> {
         Ok(match lexer.peek().data() {
-            TokenData::StringLit(s) => {
-                let span = lexer.next().span();
-                Some((s, span))
-            }
+            TokenData::StringLit(s) => Some(lexer.next().span.embed(s)),
             _ => None,
         })
     }
@@ -466,10 +427,7 @@ impl Parse for StringLiteral {
 impl Parse for NumberLiteral {
     fn parse(lexer: LexerMut) -> ParseResult<Self> {
         Ok(match lexer.peek().data() {
-            TokenData::NumberLit(n) => {
-                let span = lexer.next().span();
-                Some((n, span))
-            }
+            TokenData::NumberLit(n) => Some(lexer.next().span.embed(n)),
             _ => None,
         })
     }
@@ -478,10 +436,7 @@ impl Parse for NumberLiteral {
 impl Parse for Ident {
     fn parse(lexer: LexerMut) -> ParseResult<Self> {
         Ok(match lexer.peek().data() {
-            TokenData::Ident(i) => {
-                let span = lexer.next().span();
-                Some((i, span))
-            }
+            TokenData::Ident(i) => Some(lexer.next().span.embed(i)),
             _ => None,
         })
     }
@@ -490,10 +445,7 @@ impl Parse for Ident {
 impl Parse for UpperIdent {
     fn parse(lexer: LexerMut) -> ParseResult<Self> {
         Ok(match lexer.peek().data() {
-            TokenData::UpperIdent(i) => {
-                let span = lexer.next().span();
-                Some((i, span))
-            }
+            TokenData::UpperIdent(i) => Some(lexer.next().span.embed(i)),
             _ => None,
         })
     }
@@ -538,8 +490,7 @@ impl Parse for ExprPart {
                 TokenData::Punct(Punctuation::Equals) => ExprPart::Equals,
                 _ => return Ok(None),
             };
-            let span = lexer.next().span();
-            Ok(Some((part, span)))
+            Ok(Some(lexer.next().span.embed(part)))
         }
 
         or6(
@@ -575,18 +526,17 @@ impl ExprPart {
         }
     }
 
-    fn into_operand(self, span: TextRange) -> Result<Expr, Error> {
-        let expr_data = match self {
-            ExprPart::Literal(l) => ExprData::Literal(l),
-            ExprPart::Invokable(n) => ExprData::Invokable(n),
-            ExprPart::Lambda(l) => ExprData::Lambda(l),
-            ExprPart::Block(b) => ExprData::Block(b),
-            ExprPart::Parens(p) => ExprData::Tuple(p),
+    fn into_operand(self) -> Result<Expr, Error> {
+        Ok(match self {
+            ExprPart::Literal(l) => Expr::Literal(l),
+            ExprPart::Invokable(n) => Expr::Invokable(n),
+            ExprPart::Lambda(l) => Expr::Lambda(l),
+            ExprPart::Block(b) => Expr::Block(b),
+            ExprPart::Parens(p) => Expr::Tuple(p),
             ExprPart::And | ExprPart::Or | ExprPart::Dot | ExprPart::Equals => {
                 return Err(todo!())
             }
-        };
-        Ok(Expr::new(expr_data, span))
+        })
     }
 
     fn assert_is_operator(&self, lhs: &Expr) -> Result<(), Error> {
@@ -594,78 +544,86 @@ impl ExprPart {
             ExprPart::Parens(_) | ExprPart::Dot | ExprPart::Equals => Ok(()),
 
             ExprPart::Invokable(i) => match *i.name {
-                Name::Operator(_) | Name::Type(_) => validate_operand(lhs.inner()),
+                Name::Operator(_) | Name::Type(_) => validate_operand(lhs),
                 Name::Ident(_) => {
-                    Err(Error::ExpectedGot3("operator", ExprData::Invokable(i.clone())))
+                    Err(Error::ExpectedGot3("operator", Expr::Invokable(i.clone())))
                 }
             },
 
-            ExprPart::And | ExprPart::Or => validate_operand(lhs.inner()),
+            ExprPart::And | ExprPart::Or => validate_operand(lhs),
 
             ExprPart::Lambda(l) => {
-                Err(Error::ExpectedGot3("operator", ExprData::Lambda(l.clone())))
+                Err(Error::ExpectedGot3("operator", Expr::Lambda(l.clone())))
             }
 
             ExprPart::Block(b) => {
-                Err(Error::ExpectedGot3("operator", ExprData::Block(b.clone())))
+                Err(Error::ExpectedGot3("operator", Expr::Block(b.clone())))
             }
 
             ExprPart::Literal(l) => {
-                Err(Error::ExpectedGot3("operator", ExprData::Literal(*l)))
+                Err(Error::ExpectedGot3("operator", Expr::Literal(*l)))
             }
         }
     }
 
-    fn into_operation(self, lhs: Expr, rhs: Expr) -> Result<Expr, Error> {
-        let span = lhs.span().merge(rhs.span());
+    fn into_operation(
+        self,
+        lhs: Spanned<Expr>,
+        rhs: Spanned<Expr>,
+    ) -> Result<Spanned<Expr>, Error> {
+        let span = lhs.span.merge(rhs.span);
         let data = match self {
             ExprPart::Invokable(i) => match *i.name {
                 Name::Operator(operator) => {
-                    validate_operand(lhs.inner())?;
-                    validate_operand(rhs.inner())?;
-                    ExprData::Operation(Operation { operator, lhs, rhs })
+                    validate_operand(&lhs.inner)?;
+                    validate_operand(&rhs.inner)?;
+                    Expr::Operation(Operation {
+                        operator,
+                        lhs: Box::new(lhs),
+                        rhs: Box::new(rhs),
+                    })
                 }
                 _ => return Err(todo!()),
             },
             ExprPart::And => {
-                validate_operand(lhs.inner())?;
-                validate_operand(rhs.inner())?;
-                ExprData::ShortcircuitingOp(ScOperation {
+                validate_operand(&lhs.inner)?;
+                validate_operand(&rhs.inner)?;
+                Expr::ShortcircuitingOp(ScOperation {
                     operator: ScOperator::And,
-                    lhs,
-                    rhs,
+                    lhs: Box::new(lhs),
+                    rhs: Box::new(rhs),
                 })
             }
             ExprPart::Or => {
-                validate_operand(lhs.inner())?;
-                validate_operand(rhs.inner())?;
-                ExprData::ShortcircuitingOp(ScOperation {
+                validate_operand(&lhs.inner)?;
+                validate_operand(&rhs.inner)?;
+                Expr::ShortcircuitingOp(ScOperation {
                     operator: ScOperator::Or,
-                    lhs,
-                    rhs,
+                    lhs: Box::new(lhs),
+                    rhs: Box::new(rhs),
                 })
             }
-            ExprPart::Dot => ExprData::MemberCall(MemberCall {
+            ExprPart::Dot => Expr::MemberCall(MemberCall {
                 member: match rhs.into_inner() {
-                    (ExprData::Invokable(i), _) => i,
+                    (Expr::Invokable(i), _) => i,
                     _ => return Err(todo!()),
                 },
-                receiver: lhs,
+                receiver: Box::new(lhs),
             }),
             ExprPart::Equals => {
-                validate_operand(lhs.inner())?;
-                ExprData::Assignment(Assignment { lhs, rhs })
+                validate_operand(&lhs.inner)?;
+                Expr::Assignment(Assignment { lhs: Box::new(lhs), rhs: Box::new(rhs) })
             }
             _ => return Err(todo!()),
         };
-        Ok(Expr::new(data, span))
+        Ok(span.embed(data))
     }
 }
 
-impl ExprData {
+impl Expr {
     fn to_operator(&self) -> Option<Operator> {
         match self {
-            ExprData::Invokable(i) => match *i.name {
+            Expr::Invokable(i) => match *i.name {
                 Name::Operator(o) => Some(o),
                 _ => None,
             },
@@ -674,7 +632,7 @@ impl ExprData {
     }
 }
 
-fn validate_operand(expr: &ExprData) -> Result<(), Error> {
+fn validate_operand(expr: &Expr) -> Result<(), Error> {
     if let Some(op) = expr.to_operator() {
         Err(Error::OperatorInsteadOfOperand(op))
     } else {
