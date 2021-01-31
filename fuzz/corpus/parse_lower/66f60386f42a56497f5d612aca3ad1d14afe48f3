@@ -1,0 +1,10 @@
+fuo() {
+    a * {a - 10} + "test";
+    a = 10.005;
+    a -= +1;
+    foo(number: a) # the result
+}
+fun bar[T](x Option[T]) List[T] {
+    x.as_list List[_]
+[_]
+}

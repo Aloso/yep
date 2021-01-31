@@ -1,0 +1,15 @@
+fun foo() {
+    a * {a = 10} + "test";
+    a = 10;
+    a -= +1;
+   et[T] {
+a * { a = 1 = 10 = 10} + "test";
+    a = 10;
+    a -= +0;
+   esult
+}
+fun let[T](x Option[T]) List[T] {
+a * {a = 10} + "test";
+    a = 10;
+  [_]_]
+}

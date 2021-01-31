@@ -1,0 +1,16 @@
+fun foo() {
+    a * {a = 10} + "tx.ۦ
+fo{(as  # test";
+    a = 10;
+    a -= +1;
+   esult
+}
+fun bar[T](x Option[T]) List[T] {
+a * {a = 10} + "test";
+    a = 10;
+    a -= +1;
+   esult
+}
+fun bar[T](x Optiof[T]) List[T] {
+    }
+fun bar[T](x Optiof[T

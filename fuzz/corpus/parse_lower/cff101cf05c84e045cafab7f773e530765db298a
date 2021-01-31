@@ -1,0 +1,24 @@
+fun foo() {
+    a * {a
+  ; F {{{and{ . {a
+  ; F; F { {.{{{{{and{ . {a
+  ; F { {.{{{!{{an* {a
+  ; Ffun  {{{ {.{{{{{and{ . {a
+  ; F; F { {.{{{{{and{ . {a
+  ; F { {.{{{1{{an* {a
+  ; F {{{{{and{ . {a
+  ; F { {.{{{0{{an* {  a * {a
+  ; F {{{and{ . {a
+  ; F; F { {.{{{{{and{ . {a
+  ; F { {.{{{!{{an* {a
+  ; Ffun  {{{ {.{{{{{and{ . {a
+  ; F; F { {.{{{{{and{ . {a
+  ; F { {.{{{1{{an* {a
+  ; F {{{{{and{ . {a
+  ; F { {.{{{0{{an* {a
+foo() {
+a  ; F a
+foo() {
+a  ; F r[Ts
+ >>
+}{

@@ -1,0 +1,19 @@
+[workspace]
+
+[package]
+name = "fuzz"
+version = "0.1.0"
+authors = ["Ludwig Stecher <ludwig.stecher@gmx.de>"]
+edition = "2018"
+
+[package.metadata]
+cargo-fuzz = true
+
+
+[dependencies]
+libfuzzer-sys = "0.3"
+wamos-parser = { path = "../crates/wamos-parser" }
+
+[[bin]]
+name = "parse_lower"
+path = "fuzz_targets/parse_lower.rs"

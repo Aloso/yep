@@ -1,0 +1,10 @@
+fun foo0 (){a  
+ * {a;
+ Foo(numb ,~~~~ {a;
+   ~~~~ {a;
+    Foo(numb ,{a;
+   Foo(numb ,~~~~ {a;
+    Foo(numb ,{ Foo(numb ,{a;
+   Foo(numb ,~~~~ {a;
+    Foo(numb ,{a;
+  @ r: fa)
