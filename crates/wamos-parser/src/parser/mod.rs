@@ -102,6 +102,9 @@ pub enum Error {
     #[error("Expected {0}, got {1:?}")]
     ExpectedGot3(&'static str, Expr),
 
+    #[error("Expected {0}, got {1}")]
+    ExpectedGot4(&'static str, &'static str),
+
     #[error(
         "Operators are not allowed here: {0:?}\n  tip: Wrap the operator in braces, \
          e.g. `{{+}}`"

@@ -1,7 +1,7 @@
 use string_interner::StringInterner;
 
-use crate::lexer::{Ident, Operator, StringLiteral, UpperIdent};
-use crate::{key_values, lexer::NumberLiteral};
+use crate::key_values;
+use crate::lexer::{Ident, NumberLiteral, Operator, StringLiteral, UpperIdent};
 
 use super::expr::*;
 use super::formatting::{FancyFormat, FancyKV, FancyList};

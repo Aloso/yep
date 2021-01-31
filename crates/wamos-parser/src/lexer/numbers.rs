@@ -243,7 +243,8 @@ pub(super) fn parse_number(input: &str) -> TokenData {
 
 #[cfg(test)]
 mod tests {
-    use crate::lexer::{self, tokens::TokenData};
+    use crate::lexer;
+    use crate::lexer::tokens::TokenData;
 
     use super::NumberLiteral::{self as Num, *};
 

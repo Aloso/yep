@@ -1,4 +1,5 @@
-use std::{fmt, marker::PhantomData};
+use std::fmt;
+use std::marker::PhantomData;
 
 use logos::Lexer;
 use string_interner::StringInterner;

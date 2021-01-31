@@ -12,7 +12,6 @@ use super::items::*;
 use super::patterns::Pattern;
 use super::{Error, LexerMut, Parse, ParseResult};
 
-/// 64 bytes
 #[derive(Debug, Clone)]
 pub enum Expr {
     Invokable(Invokable),
@@ -33,7 +32,6 @@ pub enum Expr {
     Case(Case),
 }
 
-/// 48 bytes
 #[derive(Debug, Clone)]
 pub struct Invokable {
     pub name: Spanned<Name>,
@@ -313,7 +311,7 @@ impl Parse for Lambda {
         )(lexer)?);
 
         let body = or2(map(Block::parse, Expr::Block), Expr::parse)(lexer)?;
-        let body = Box::new(body.ok_or_else(|| todo!())?);
+        let body = Box::new(body.ok_or(Error::Expected("block or expression"))?);
 
         let span = args.span.merge(body.span);
 
@@ -500,8 +498,6 @@ impl Parse for ExprPart {
     }
 }
 
-// TODO: remove attribute
-#[allow(unreachable_code, clippy::diverging_sub_expression)]
 impl ExprPart {
     fn kind(&self) -> ExprPartKind {
         match self {
@@ -529,9 +525,10 @@ impl ExprPart {
             ExprPart::Lambda(l) => Expr::Lambda(l),
             ExprPart::Block(b) => Expr::Block(b),
             ExprPart::Parens(p) => Expr::Tuple(p),
-            ExprPart::And | ExprPart::Or | ExprPart::Dot | ExprPart::Equals => {
-                return Err(todo!())
-            }
+            ExprPart::And => return Err(Error::ExpectedGot4("operand", "`and`")),
+            ExprPart::Or => return Err(Error::ExpectedGot4("operand", "`or`")),
+            ExprPart::Dot => return Err(Error::ExpectedGot4("operand", "`.`")),
+            ExprPart::Equals => return Err(Error::ExpectedGot4("operand", "`=`")),
         })
     }
 
@@ -579,7 +576,7 @@ impl ExprPart {
                         rhs: Box::new(rhs),
                     })
                 }
-                _ => return Err(todo!()),
+                _ => panic!("Unexpected name, expected operator, found {:?}", i),
             },
             ExprPart::And => {
                 validate_operand(&lhs.inner)?;
@@ -602,7 +599,7 @@ impl ExprPart {
             ExprPart::Dot => Expr::MemberCall(MemberCall {
                 member: match rhs.into_inner() {
                     (Expr::Invokable(i), _) => i,
-                    _ => return Err(todo!()),
+                    (e, _) => return Err(Error::ExpectedGot3("name", e)),
                 },
                 receiver: Box::new(lhs),
             }),
@@ -610,7 +607,7 @@ impl ExprPart {
                 validate_operand(&lhs.inner)?;
                 Expr::Assignment(Assignment { lhs: Box::new(lhs), rhs: Box::new(rhs) })
             }
-            _ => return Err(todo!()),
+            e => panic!("Expected name, infix operator, `.` or `=`, got {:?}", e),
         };
         Ok(span.embed(data))
     }
