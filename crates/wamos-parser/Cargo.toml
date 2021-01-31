@@ -14,3 +14,4 @@ thiserror = "1.0"
 
 [dev-dependencies]
 assert_matches = "1.4"
+difference = "2.0"
