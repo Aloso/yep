@@ -1,11 +1,9 @@
-use crate::{
-    lexer::{Ident, Keyword, Operator, Punctuation, TokenData, UpperIdent},
-    text_range::SpannedList,
-};
-use crate::{text_range::Spanned, uoret};
+use crate::lexer::{Ident, Keyword, Operator, Punctuation, TokenData, UpperIdent};
+use crate::{uoret, Spanned, SpannedList};
 
 use super::expr::{Block, Expr};
-use super::{helpers::*, LexerMut, Parse, ParseResult};
+use super::helpers::*;
+use super::{LexerMut, Parse, ParseResult};
 
 #[derive(Debug, Clone)]
 pub enum Item {

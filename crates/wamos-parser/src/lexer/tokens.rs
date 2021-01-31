@@ -3,7 +3,7 @@ use std::{fmt, marker::PhantomData};
 use logos::Lexer;
 use string_interner::StringInterner;
 
-use crate::text_range::{Spanned, TextRange};
+use crate::{Spanned, TextRange};
 
 use super::idents::StringLiteral;
 use super::syntax::{parse_keyword, IToken};

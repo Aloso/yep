@@ -1,8 +1,9 @@
 use crate::lexer::{Operator, Token, TokenData};
-use crate::text_range::{Spanned, TextRange};
+use crate::{Spanned, TextRange};
 
+use self::expr::Expr;
 pub use self::formatting::FancyFormat;
-use self::{expr::Expr, items::Item};
+use self::items::Item;
 
 pub mod expr;
 pub mod formatting;

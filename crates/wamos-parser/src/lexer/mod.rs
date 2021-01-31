@@ -5,14 +5,12 @@ mod tokens;
 
 use std::fmt;
 
-use string_interner::StringInterner;
+use crate::{Spanned, StringInterner};
 
 pub use idents::{Ident, Operator, StringLiteral, UpperIdent};
 pub use numbers::NumberLiteral;
 pub use syntax::{Keyword, Punctuation};
 pub use tokens::{LexError, Token, TokenData, TokenKind};
-
-use crate::text_range::Spanned;
 
 pub fn lex(text: &str) -> Program<'_> {
     let mut interner = StringInterner::new();

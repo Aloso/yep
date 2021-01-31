@@ -1,15 +1,11 @@
 use std::fmt;
 use std::iter::Peekable;
 
-use crate::text_range::Spanned;
-use crate::uoret;
-use crate::{
-    lexer::{
-        Ident, Keyword, NumberLiteral, Operator, Punctuation, StringLiteral, TokenData,
-        UpperIdent,
-    },
-    text_range::SpannedList,
+use crate::lexer::{
+    Ident, Keyword, NumberLiteral, Operator, Punctuation, StringLiteral, TokenData,
+    UpperIdent,
 };
+use crate::{uoret, Spanned, SpannedList};
 
 use super::helpers::*;
 use super::items::*;
