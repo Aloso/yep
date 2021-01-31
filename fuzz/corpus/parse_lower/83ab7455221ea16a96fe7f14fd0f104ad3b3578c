@@ -1,4 +1,0 @@
-fun foo[T](x Opti[T]) List[T] {
-    
-}
-+ "test* {a Option

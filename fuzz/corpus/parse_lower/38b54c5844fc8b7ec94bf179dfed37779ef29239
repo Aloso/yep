@@ -1,9 +1,0 @@
-fun foo() {
-    a * {a - 10} + "test";
-   = 10.005;
-    a -= +1;
-    foo(numb e:ra) # the result
-}
-fun bar[T](x Option[T]) List[T] {] {
-    x.as_list List][_
-}
