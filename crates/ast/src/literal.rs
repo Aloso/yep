@@ -54,6 +54,8 @@ impl StringLiteral {
     pub fn lookup<'a>(&self, interner: &'a StringInterner) -> Option<&'a str> {
         interner.resolve(self.0)
     }
+
+    pub fn symbol(&self) -> DefaultSymbol { self.0 }
 }
 
 impl fmt::Debug for StringLiteral {

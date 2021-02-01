@@ -1,7 +1,9 @@
 use ast::token::TokenKind;
 use string_interner::StringInterner;
 use wamos_parser::lexer::{self, Program};
-use wamos_parser::parser::{self, FancyFormat};
+use wamos_parser::parser;
+use wamos_parser::parser::formatting::ToBeauty;
+
 
 const BLUE: &str = "\x1b[38;2;50;220;255m";
 const GREEN: &str = "\x1b[38;2;80;230;100m";
@@ -36,7 +38,7 @@ fn main() {
         match parser::parse(program.tokens()) {
             Ok(parsed) => {
                 println!("Parsed output:");
-                println!("{}", parsed.to_string(&interner).trim_end());
+                println!("{}", parsed.to_beauty_string(&interner).trim_end());
                 println!("\n");
             }
             Err(error) => {

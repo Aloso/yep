@@ -3,7 +3,7 @@ use ast::item::Item;
 use ast::token::{Operator, Token, TokenData};
 use ast::{Spanned, TextRange};
 
-pub use self::formatting::FancyFormat;
+pub use self::formatting::ToBeauty;
 
 pub mod expr;
 pub mod formatting;

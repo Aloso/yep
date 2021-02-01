@@ -1,383 +1,188 @@
-use string_interner::StringInterner;
+use string_interner::DefaultSymbol;
 
-use crate::key_values;
-
-use super::formatting::{FancyFormat, FancyKV, FancyList};
+use super::formatting::{Beauty, BeautyData, ToBeauty};
 use ast::expr::*;
 use ast::item::*;
 use ast::token::*;
 
-macro_rules! impl_fancy_format_struct {
-    ($name:ident : $s:literal { $( $key:literal => $value:ident ),* $(,)? }) => {
-        impl FancyFormat for $name {
-            fn fmt_impl(&self, buf: &mut String, indent: usize, interner: &StringInterner) {
-                key_values!($s {
-                    $( FancyKV($key, &self.$value) ),*
-                })
-                .fmt(buf, indent, interner)
+macro_rules! beauty_impl {
+    (struct $name:ident { $($field:ident),* $(,)? }) => {
+        impl ToBeauty for $name {
+            fn to_beauty(&self) -> Beauty {
+                Beauty::kvs(
+                    stringify!($name),
+                    vec![ $( Beauty::kv(stringify!($field), Beauty::from(&self.$field)) ),* ]
+                )
             }
-
-            fn is_single_line(&self) -> bool {
-                let mut single_lines = 0;
-                $(
-                    if !self.$value.is_empty() {
-                        if self.$value.is_single_line() {
-                            single_lines += 1;
-                        } else {
-                            return false;
-                        }
-                        if single_lines > 1 {
-                            return false;
-                        }
-                    }
-                )*
-                single_lines == 1
-            }
-
-            fn is_empty(&self) -> bool {
-                $(
-                    if !self.$value.is_empty() {
-                        return false;
-                    }
-                )*
-                true
+        }
+    };
+    (enum $name:ident { $($variant:ident),* $(,)? }) => {
+        impl ToBeauty for $name {
+            fn to_beauty(&self) -> Beauty {
+                match self {
+                    $( $name::$variant(f) => f.into(), )*
+                }
             }
         }
     };
 }
 
-impl FancyFormat for Item {
-    fn fmt_impl(&self, buf: &mut String, indent: usize, interner: &StringInterner) {
+impl ToBeauty for NumberLiteral {
+    fn to_beauty(&self) -> Beauty { Beauty { data: BeautyData::Number(*self), num: 1 } }
+}
+
+impl ToBeauty for StringLiteral {
+    fn to_beauty(&self) -> Beauty { Beauty { data: BeautyData::String(*self), num: 1 } }
+}
+
+impl ToBeauty for DeclKind {
+    fn to_beauty(&self) -> Beauty {
         match self {
-            Item::Function(x) => x.fmt(buf, indent, interner),
-            Item::Class(x) => x.fmt(buf, indent, interner),
-            Item::Enum(x) => x.fmt(buf, indent, interner),
+            DeclKind::Let => "Let".to_beauty(),
+            DeclKind::Var => "Var".to_beauty(),
         }
     }
-    fn is_single_line(&self) -> bool {
+}
+
+impl ToBeauty for ScOperator {
+    fn to_beauty(&self) -> Beauty {
         match self {
-            Item::Function(x) => x.is_single_line(),
-            Item::Class(x) => x.is_single_line(),
-            Item::Enum(x) => x.is_single_line(),
+            ScOperator::And => "And".to_beauty(),
+            ScOperator::Or => "Or".to_beauty(),
         }
     }
 }
 
-impl_fancy_format_struct! {
-    Function: "Function" {
-        "name" => name,
-        "generics" => generics,
-        "args" => args,
-        "return_ty" => return_ty,
-        "body" => body,
-    }
+impl ToBeauty for DefaultSymbol {
+    fn to_beauty(&self) -> Beauty { Beauty { data: BeautyData::Interned(*self), num: 1 } }
 }
 
-impl_fancy_format_struct! {
-    Class: "Class" {
-        "name" => name,
-        "generics" => generics,
-        // "fields" => fields,
-    }
+impl ToBeauty for Ident {
+    fn to_beauty(&self) -> Beauty { Beauty::kv("Ident", self.symbol().to_beauty()) }
 }
 
-impl_fancy_format_struct! {
-    Enum: "Enum" {
-        "name" => name,
-        "generics" => generics,
-        // "variants" => variants,
-    }
+impl ToBeauty for UpperIdent {
+    fn to_beauty(&self) -> Beauty { Beauty::kv("UpperIdent", self.symbol().to_beauty()) }
 }
 
-impl FancyFormat for Name {
-    fn fmt_impl(&self, buf: &mut String, indent: usize, interner: &StringInterner) {
+impl ToBeauty for Operator {
+    fn to_beauty(&self) -> Beauty { Beauty::kv("Operator", self.symbol().to_beauty()) }
+}
+
+beauty_impl! {
+    enum Item { Function, Class, Enum }
+}
+
+beauty_impl! {
+    struct Function { name, generics, args, return_ty, body }
+}
+
+beauty_impl! {
+    struct Class { /* name, generics, fields */ }
+}
+
+beauty_impl! {
+    struct Enum { /* name, generics, variants */ }
+}
+
+beauty_impl! {
+    enum Name { Ident, Type, Operator }
+}
+
+beauty_impl! {
+    struct GenericParam { name, bounds }
+}
+
+impl ToBeauty for TypeBound {
+    fn to_beauty(&self) -> Beauty { match *self {} }
+}
+
+beauty_impl! {
+    struct FunArgument { name, ty, default }
+}
+
+beauty_impl! {
+    struct NamedType { name, args }
+}
+
+impl ToBeauty for TypeArgument {
+    fn to_beauty(&self) -> Beauty {
         match self {
-            Name::Operator(x) => x.fmt(buf, indent, interner),
-            Name::Ident(x) => x.fmt(buf, indent, interner),
-            Name::Type(x) => x.fmt(buf, indent, interner),
-        }
-    }
-    fn is_single_line(&self) -> bool { true }
-}
-
-impl FancyFormat for Operator {
-    fn fmt_impl(&self, buf: &mut String, indent: usize, interner: &StringInterner) {
-        self.lookup(interner).unwrap().fmt(buf, indent, interner);
-    }
-    fn is_single_line(&self) -> bool { true }
-}
-impl FancyFormat for Ident {
-    fn fmt_impl(&self, buf: &mut String, indent: usize, interner: &StringInterner) {
-        self.lookup(interner).unwrap().fmt(buf, indent, interner);
-    }
-    fn is_single_line(&self) -> bool { true }
-}
-impl FancyFormat for UpperIdent {
-    fn fmt_impl(&self, buf: &mut String, indent: usize, interner: &StringInterner) {
-        self.lookup(interner).unwrap().fmt(buf, indent, interner);
-    }
-    fn is_single_line(&self) -> bool { true }
-}
-
-impl_fancy_format_struct! {
-    GenericParam: "GenericParam" {
-        "name" => name,
-        "bounds" => bounds,
-    }
-}
-
-impl FancyFormat for TypeBound {
-    fn fmt_impl(&self, _buf: &mut String, _indent: usize, _interner: &StringInterner) {
-        match *self {}
-    }
-}
-
-impl_fancy_format_struct! {
-    FunArgument: "FunArgument" {
-        "name" => name,
-        "ty" => ty,
-        "default" => default,
-    }
-}
-
-impl_fancy_format_struct! {
-    NamedType: "NamedType" {
-        "name" => name,
-        "args" => args,
-    }
-}
-
-impl FancyFormat for TypeArgument {
-    fn fmt_impl(&self, buf: &mut String, indent: usize, interner: &StringInterner) {
-        match self {
-            TypeArgument::Type(t) => t.fmt(buf, indent, interner),
-            TypeArgument::Wildcard => "Wildcard".fmt(buf, indent, interner),
-        }
-    }
-    fn is_single_line(&self) -> bool {
-        match self {
-            TypeArgument::Type(t) => t.is_single_line(),
-            TypeArgument::Wildcard => true,
+            TypeArgument::Type(f) => f.into(),
+            TypeArgument::Wildcard => "Wildcard".to_beauty(),
         }
     }
 }
 
-impl FancyFormat for Expr {
-    fn fmt_impl(&self, buf: &mut String, indent: usize, interner: &StringInterner) {
-        match self {
-            Expr::Invokable(x) => x.fmt(buf, indent, interner),
-            Expr::Literal(x) => x.fmt(buf, indent, interner),
-            Expr::ParenCall(x) => x.fmt(buf, indent, interner),
-            Expr::MemberCall(x) => x.fmt(buf, indent, interner),
-            Expr::Operation(x) => x.fmt(buf, indent, interner),
-            Expr::ShortcircuitingOp(x) => x.fmt(buf, indent, interner),
-            Expr::Assignment(x) => x.fmt(buf, indent, interner),
-            Expr::TypeAscription(x) => x.fmt(buf, indent, interner),
-            Expr::Statement(x) => x.fmt(buf, indent, interner),
-            Expr::Lambda(x) => x.fmt(buf, indent, interner),
-            Expr::Block(x) => x.fmt(buf, indent, interner),
-            Expr::Tuple(x) => x.fmt(buf, indent, interner),
-            Expr::Empty(x) => x.fmt(buf, indent, interner),
-            Expr::Declaration(x) => x.fmt(buf, indent, interner),
-            Expr::Case(x) => x.fmt(buf, indent, interner),
-        }
-    }
-
-    fn is_single_line(&self) -> bool {
-        match self {
-            Expr::Invokable(x) => x.is_single_line(),
-            Expr::Literal(x) => x.is_single_line(),
-            Expr::ParenCall(x) => x.is_single_line(),
-            Expr::MemberCall(x) => x.is_single_line(),
-            Expr::Operation(x) => x.is_single_line(),
-            Expr::ShortcircuitingOp(x) => x.is_single_line(),
-            Expr::Assignment(x) => x.is_single_line(),
-            Expr::TypeAscription(x) => x.is_single_line(),
-            Expr::Statement(x) => x.is_single_line(),
-            Expr::Lambda(x) => x.is_single_line(),
-            Expr::Block(x) => x.is_single_line(),
-            Expr::Tuple(x) => x.is_single_line(),
-            Expr::Empty(x) => x.is_single_line(),
-            Expr::Declaration(x) => x.is_single_line(),
-            Expr::Case(x) => x.is_single_line(),
-        }
+beauty_impl! {
+    enum Expr {
+        Invokable, Literal, ParenCall, MemberCall, Operation,
+        ShortcircuitingOp, Assignment, TypeAscription, Lambda,
+        Block, Empty, Declaration, Case, Statement, Tuple
     }
 }
 
-impl_fancy_format_struct! {
-    Invokable: "Invokable" {
-        "name" => name,
-        "generics" => generics,
-    }
+
+beauty_impl! {
+    struct Invokable { name, generics }
 }
 
-impl FancyFormat for Literal {
-    fn fmt_impl(&self, buf: &mut String, indent: usize, interner: &StringInterner) {
-        match self {
-            Literal::NumberLit(x) => x.fmt(buf, indent, interner),
-            Literal::StringLit(x) => x.fmt(buf, indent, interner),
-        }
-    }
-    fn is_single_line(&self) -> bool { true }
+beauty_impl! {
+    enum Literal { NumberLit, StringLit }
 }
 
-impl FancyFormat for NumberLiteral {
-    fn fmt_impl(&self, buf: &mut String, _indent: usize, _interner: &StringInterner) {
-        match self {
-            NumberLiteral::Int(x) => buf.push_str(&format!("Int: {}", x)),
-            NumberLiteral::UInt(x) => buf.push_str(&format!("UInt: {}", x)),
-            NumberLiteral::Float(x) => buf.push_str(&format!("Float: {}", x)),
-        }
-    }
-    fn is_single_line(&self) -> bool { true }
+beauty_impl! {
+    struct ParenCall { receiver, args }
 }
 
-impl FancyFormat for StringLiteral {
-    fn fmt_impl(&self, buf: &mut String, _indent: usize, interner: &StringInterner) {
-        buf.push_str("String: ");
-        buf.push_str(self.lookup(interner).unwrap());
-    }
-    fn is_single_line(&self) -> bool { true }
+beauty_impl! {
+    struct MemberCall { receiver, member }
 }
 
-impl_fancy_format_struct! {
-    ParenCall: "ParenCall" {
-        "receiver" => receiver,
-        "args" => args,
-    }
+beauty_impl! {
+    struct Operation { operator, lhs, rhs }
 }
 
-impl_fancy_format_struct! {
-    FunCallArgument: "FunCallArgument" {
-        "name" => name,
-        "expr" => expr,
-    }
+beauty_impl! {
+    struct ScOperation { operator, lhs, rhs }
 }
 
-impl_fancy_format_struct! {
-    MemberCall: "MemberCall" {
-        "receiver" => receiver,
-        "member" => member,
-    }
+beauty_impl! {
+    struct Assignment { lhs, rhs }
 }
 
-impl_fancy_format_struct! {
-    Operation: "Operation" {
-        "operator" => operator,
-        "lhs" => lhs,
-        "rhs" => rhs,
-    }
+beauty_impl! {
+    struct TypeAscription { ty, expr }
 }
 
-impl_fancy_format_struct! {
-    ScOperation: "ScOperation" {
-        "operator" => operator,
-        "lhs" => lhs,
-        "rhs" => rhs,
-    }
+beauty_impl! {
+    struct Lambda { args, body }
 }
 
-impl FancyFormat for ScOperator {
-    fn fmt_impl(&self, buf: &mut String, _indent: usize, _interner: &StringInterner) {
-        match self {
-            ScOperator::And => buf.push_str("And"),
-            ScOperator::Or => buf.push_str("Or"),
-        }
-    }
-    fn is_single_line(&self) -> bool { true }
+beauty_impl! {
+    struct Block { exprs, ends_with_semicolon }
 }
 
-impl_fancy_format_struct! {
-    Assignment: "Assignment" {
-        "lhs" => lhs,
-        "rhs" => rhs,
-    }
+beauty_impl! {
+    struct Parens { exprs }
 }
 
-impl_fancy_format_struct! {
-    TypeAscription: "TypeAscription" {
-        "ty" => ty,
-        "expr" => expr,
-    }
+beauty_impl! {
+    struct FunCallArgument { name, expr }
 }
 
-impl_fancy_format_struct! {
-    Lambda: "Lambda" {
-        "args" => args,
-        "body" => body,
-    }
+beauty_impl! {
+    struct LambdaArgument { name, ty }
 }
 
-impl_fancy_format_struct! {
-    LambdaArgument: "LambdaArgument" {
-        "name" => name,
-        "ty" => ty,
-    }
+impl ToBeauty for Empty {
+    fn to_beauty(&self) -> Beauty { "Empty".to_beauty() }
 }
 
-impl FancyFormat for Block {
-    fn fmt_impl(&self, buf: &mut String, indent: usize, interner: &StringInterner) {
-        if FancyList(self.exprs.as_ref()).is_empty() {
-            buf.push_str("Block");
-        } else {
-            FancyKV("Block", FancyList(self.exprs.as_ref())).fmt(buf, indent, interner)
-        }
-    }
-
-    fn is_single_line(&self) -> bool {
-        let list = FancyList(self.exprs.as_ref());
-        list.is_empty() || list.is_single_line()
-    }
-
-    fn is_empty(&self) -> bool { false }
+beauty_impl! {
+    struct Declaration { decl_kind, name, value }
 }
 
-impl FancyFormat for Parens {
-    fn fmt_impl(&self, buf: &mut String, indent: usize, interner: &StringInterner) {
-        if FancyList(self.exprs.as_ref()).is_empty() {
-            buf.push_str("Parens");
-        } else {
-            FancyKV("Parens", FancyList(self.exprs.as_ref())).fmt(buf, indent, interner)
-        }
-    }
-
-    fn is_single_line(&self) -> bool {
-        let list = FancyList(self.exprs.as_ref());
-        list.is_empty() || list.is_single_line()
-    }
-
-    fn is_empty(&self) -> bool { false }
-}
-
-impl FancyFormat for Empty {
-    fn fmt_impl(&self, buf: &mut String, _indent: usize, _interner: &StringInterner) {
-        buf.push_str("Empty");
-    }
-    fn is_single_line(&self) -> bool { true }
-}
-
-impl_fancy_format_struct! {
-    Declaration: "Declaration" {
-        "decl_kind" => decl_kind,
-        "name" => name,
-        "value" => value,
-    }
-}
-
-impl FancyFormat for DeclKind {
-    fn fmt_impl(&self, buf: &mut String, _indent: usize, _interner: &StringInterner) {
-        match self {
-            DeclKind::Let => buf.push_str("Let"),
-            DeclKind::Var => buf.push_str("Var"),
-        }
-    }
-
-    fn is_single_line(&self) -> bool { true }
-}
-
-impl_fancy_format_struct! {
-    Case: "Case" {
-        "expr" => expr,
-        // "match_arms" => match_arms,
-    }
+beauty_impl! {
+    struct Case { expr, /* match_arms */ }
 }

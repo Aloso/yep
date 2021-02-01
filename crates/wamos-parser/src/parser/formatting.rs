@@ -1,268 +1,222 @@
-use ast::{Spanned, TextRange};
-use string_interner::StringInterner;
+use ast::token::{NumberLiteral, StringLiteral};
+use ast::Spanned;
+use string_interner::{DefaultSymbol, StringInterner};
 
-fn do_indent(buf: &mut String, indent: usize) { buf.extend((0..indent).map(|_| ' ')); }
+#[derive(Debug, Clone)]
+pub struct Beauty {
+    pub(super) data: BeautyData,
+    // 0, 1 or many
+    pub(super) num: u8,
+}
 
-
-pub trait FancyFormat {
-    fn fmt_impl(&self, buf: &mut String, indent: usize, interner: &StringInterner);
-
-    fn is_single_line(&self) -> bool { false }
-
-    fn is_empty(&self) -> bool { false }
-
-    fn fmt(&self, buf: &mut String, indent: usize, interner: &StringInterner) {
-        if !self.is_empty() {
-            self.fmt_impl(buf, indent, interner);
-        }
+impl Beauty {
+    pub(super) fn kv(key: &'static str, value: Beauty) -> Self {
+        let num = value.num;
+        let data = BeautyData::KV { key, value: Box::new(value) };
+        Beauty { data, num }
     }
 
-    fn to_string(&self, interner: &StringInterner) -> String {
+    pub(super) fn kvs(key: &'static str, values: Vec<Beauty>) -> Self {
+        let value = Beauty::list(values);
+        let num = value.num;
+        let data = BeautyData::KV { key, value: Box::new(value) };
+        Beauty { data, num }
+    }
+
+    pub(super) fn list(values: Vec<Beauty>) -> Self {
+        let mut num = 0;
+        for b in &values {
+            num += b.num;
+            if num > 1 {
+                break;
+            }
+        }
+        Beauty { data: BeautyData::List(values), num }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub(super) enum BeautyData {
+    List(Vec<Beauty>),
+    Str(&'static str),
+    String(StringLiteral),
+    Number(NumberLiteral),
+    Interned(DefaultSymbol),
+    KV { key: &'static str, value: Box<Beauty> },
+    Empty,
+}
+
+
+pub trait ToBeauty {
+    fn to_beauty(&self) -> Beauty;
+
+    fn to_beauty_string(&self, interner: &StringInterner) -> String {
+        fn do_indent(buf: &mut String, indent: u32) {
+            buf.extend((0..indent).map(|_| ' '));
+        }
+
+        fn to_beauty_string(
+            b: &Beauty,
+            buf: &mut String,
+            indent: u32,
+            interner: &StringInterner,
+        ) {
+            if b.num == 0 {
+                return;
+            }
+            match &b.data {
+                BeautyData::List(l) => {
+                    if b.num == 1 {
+                        let v = l.iter().find(|&x| x.num > 0).unwrap();
+                        to_beauty_string(v, buf, indent, interner);
+                    } else {
+                        for (i, x) in l.iter().filter(|&x| x.num > 0).enumerate() {
+                            if i > 0 {
+                                do_indent(buf, indent);
+                            }
+                            to_beauty_string(x, buf, indent, interner);
+                            if x.num == 1 {
+                                buf.push('\n');
+                            }
+                        }
+                    }
+                }
+                BeautyData::Str(s) => buf.push_str(s),
+                BeautyData::String(s) => {
+                    buf.push_str("StringLiteral: ");
+                    buf.push_str(interner.resolve(s.symbol()).unwrap());
+                }
+                BeautyData::Number(n) => match n {
+                    NumberLiteral::Int(x) => buf.push_str(&format!("Int: {}", x)),
+                    NumberLiteral::UInt(x) => buf.push_str(&format!("UInt: {}", x)),
+                    NumberLiteral::Float(x) => buf.push_str(&format!("Float: {}", x)),
+                },
+                BeautyData::Interned(i) => buf.push_str(interner.resolve(*i).unwrap()),
+                BeautyData::KV { key, value } => {
+                    if b.num == 1 {
+                        buf.push_str(key);
+                        buf.push_str(": ");
+                        to_beauty_string(value, buf, indent, interner);
+                    } else {
+                        buf.push_str(key);
+                        buf.push('\n');
+                        do_indent(buf, indent + 3);
+                        to_beauty_string(value, buf, indent + 3, interner);
+                        if value.num == 1 {
+                            buf.push('\n');
+                        }
+                    }
+                }
+                BeautyData::Empty => {}
+            }
+        }
+
         let mut buf = String::new();
-        self.fmt(&mut buf, 0, interner);
+        to_beauty_string(&self.to_beauty(), &mut buf, 0, interner);
         buf
     }
 }
 
-impl<T: FancyFormat + ?Sized> FancyFormat for &T {
-    fn fmt_impl(&self, buf: &mut String, indent: usize, interner: &StringInterner) {
-        (*self).fmt_impl(buf, indent, interner)
-    }
 
-    fn is_single_line(&self) -> bool { (*self).is_single_line() }
+impl ToBeauty for &'static str {
+    fn to_beauty(&self) -> Beauty { Beauty { data: BeautyData::Str(*self), num: 1 } }
+}
 
-    fn is_empty(&self) -> bool { (*self).is_empty() }
+impl<'a, T: ToBeauty + ?Sized> From<&'a T> for Beauty {
+    fn from(f: &T) -> Self { f.to_beauty() }
+}
 
-    fn fmt(&self, buf: &mut String, indent: usize, interner: &StringInterner) {
-        (*self).fmt(buf, indent, interner)
+impl<T: ToBeauty> ToBeauty for Spanned<T> {
+    fn to_beauty(&self) -> Beauty { self.inner.to_beauty() }
+}
+
+impl<T: ToBeauty + ?Sized> ToBeauty for Box<T> {
+    fn to_beauty(&self) -> Beauty { (&**self).to_beauty() }
+}
+
+impl<T: ToBeauty> ToBeauty for [T] {
+    fn to_beauty(&self) -> Beauty {
+        Beauty::list(self.iter().map(ToBeauty::to_beauty).collect())
     }
 }
 
-impl FancyFormat for &'_ str {
-    fn fmt_impl(&self, buf: &mut String, _indent: usize, _interner: &StringInterner) {
-        buf.push_str(self)
+impl<T: ToBeauty> ToBeauty for Vec<T> {
+    fn to_beauty(&self) -> Beauty {
+        Beauty::list(self.iter().map(ToBeauty::to_beauty).collect())
     }
-
-    fn is_single_line(&self) -> bool { true }
-
-    fn is_empty(&self) -> bool { false }
 }
 
-/// Value, transformation, is_single_line
-pub(crate) struct FancyWrap<T, F>(pub T, pub F, pub bool);
+impl<'a, T: ToBeauty + ?Sized> ToBeauty for &'a T {
+    fn to_beauty(&self) -> Beauty { (*self).to_beauty() }
+}
 
-
-impl<T: Copy, U: FancyFormat, F: Fn(T) -> U> FancyFormat for FancyWrap<T, F> {
-    fn fmt_impl(&self, buf: &mut String, indent: usize, interner: &StringInterner) {
-        let u = self.1(self.0);
-        u.fmt_impl(buf, indent, interner);
-        if u.is_single_line() && !self.is_single_line() {
-            buf.push('\n');
+impl ToBeauty for bool {
+    fn to_beauty(&self) -> Beauty {
+        match *self {
+            true => "true".to_beauty(),
+            false => "false".to_beauty(),
         }
     }
-
-    fn is_single_line(&self) -> bool { self.2 }
-
-    fn is_empty(&self) -> bool { self.1(self.0).is_empty() }
 }
 
-pub(crate) struct FancyList<'a, T>(pub &'a [T]);
-
-impl<T: FancyFormat> FancyFormat for FancyList<'_, T> {
-    fn fmt_impl(&self, buf: &mut String, indent: usize, interner: &StringInterner) {
-        if self.is_single_line() {
-            let v = self.0.iter().find(|&x| !x.is_empty()).unwrap();
-            v.fmt(buf, indent, interner);
-        } else {
-            for (i, x) in self.0.iter().filter(|&x| !x.is_empty()).enumerate() {
-                if i > 0 {
-                    do_indent(buf, indent);
-                }
-                x.fmt(buf, indent, interner);
-                if x.is_single_line() {
-                    buf.push('\n');
-                }
+impl From<Vec<Beauty>> for Beauty {
+    fn from(x: Vec<Beauty>) -> Self {
+        let mut num = 0;
+        for b in &x {
+            num += b.num;
+            if num > 1 {
+                break;
             }
         }
-    }
-
-    fn is_empty(&self) -> bool { self.0.iter().all(|t| t.is_empty()) }
-
-    fn is_single_line(&self) -> bool {
-        let mut single_lines = 0;
-        for v in self.0.iter().filter(|&x| !x.is_empty()) {
-            if v.is_single_line() {
-                single_lines += 1;
-            } else {
-                return false;
-            }
-            if single_lines > 1 {
-                return false;
-            }
-        }
-        single_lines == 1
+        Beauty { data: BeautyData::List(x), num }
     }
 }
 
-impl<T: FancyFormat> FancyFormat for Vec<T> {
-    fn fmt_impl(&self, buf: &mut String, indent: usize, interner: &StringInterner) {
-        FancyList(self.as_slice()).fmt_impl(buf, indent, interner)
-    }
-
-    fn is_single_line(&self) -> bool { FancyList(self.as_slice()).is_single_line() }
-
-    fn is_empty(&self) -> bool { self.iter().all(|t| t.is_empty()) }
-}
-
-impl<T: FancyFormat> FancyFormat for Box<[T]> {
-    fn fmt_impl(&self, buf: &mut String, indent: usize, interner: &StringInterner) {
-        FancyList(self.as_ref()).fmt_impl(buf, indent, interner)
-    }
-
-    fn is_single_line(&self) -> bool { FancyList(self.as_ref()).is_single_line() }
-
-    fn is_empty(&self) -> bool { self.iter().all(|t| t.is_empty()) }
-}
-
-pub(crate) struct FancyKV<K: FancyFormat, V: FancyFormat>(pub K, pub V);
-
-impl<K: FancyFormat, V: FancyFormat> FancyFormat for FancyKV<K, V> {
-    fn fmt_impl(&self, buf: &mut String, indent: usize, interner: &StringInterner) {
-        if self.is_single_line() {
-            self.0.fmt(buf, indent, interner);
-            buf.push_str(": ");
-            self.1.fmt(buf, indent, interner);
-        } else {
-            self.0.fmt(buf, indent, interner);
-            if self.0.is_single_line() {
-                buf.push('\n');
-            }
-            do_indent(buf, indent + 3);
-            self.1.fmt(buf, indent + 3, interner);
-            if self.1.is_single_line() {
-                buf.push('\n');
-            }
-        }
-    }
-
-    fn is_single_line(&self) -> bool {
-        self.0.is_single_line() && self.1.is_single_line()
-    }
-
-    fn is_empty(&self) -> bool { self.0.is_single_line() && self.1.is_empty() }
-}
-
-impl<T: FancyFormat> FancyFormat for Option<T> {
-    fn fmt_impl(&self, buf: &mut String, indent: usize, interner: &StringInterner) {
+impl<T: ToBeauty> ToBeauty for Option<T> {
+    fn to_beauty(&self) -> Beauty {
         match self {
-            Some(v) => v.fmt_impl(buf, indent, interner),
-            None => {}
-        }
-    }
-
-    fn is_single_line(&self) -> bool {
-        match self {
-            Some(v) => v.is_single_line(),
-            None => false,
-        }
-    }
-
-    fn is_empty(&self) -> bool {
-        match self {
-            Some(v) => v.is_empty(),
-            None => true,
+            Some(x) => x.to_beauty(),
+            None => Beauty { data: BeautyData::Empty, num: 0 },
         }
     }
 }
 
-impl<T: FancyFormat> FancyFormat for Box<T> {
-    fn fmt_impl(&self, buf: &mut String, indent: usize, interner: &StringInterner) {
-        (**self).fmt_impl(buf, indent, interner)
-    }
-
-    fn is_single_line(&self) -> bool { (**self).is_single_line() }
-
-    fn is_empty(&self) -> bool { (**self).is_empty() }
-
-    fn fmt(&self, buf: &mut String, indent: usize, interner: &StringInterner) {
-        (**self).fmt(buf, indent, interner)
-    }
-}
-
-impl<T: FancyFormat> FancyFormat for (T, TextRange) {
-    fn fmt_impl(&self, buf: &mut String, indent: usize, interner: &StringInterner) {
-        self.0.fmt_impl(buf, indent, interner)
-    }
-
-    fn is_single_line(&self) -> bool { self.0.is_single_line() }
-
-    fn is_empty(&self) -> bool { self.0.is_empty() }
-
-    fn fmt(&self, buf: &mut String, indent: usize, interner: &StringInterner) {
-        self.0.fmt(buf, indent, interner)
-    }
-}
-
-impl<T: FancyFormat> FancyFormat for Spanned<T> {
-    fn fmt_impl(&self, buf: &mut String, indent: usize, interner: &StringInterner) {
-        self.inner.fmt_impl(buf, indent, interner)
-    }
-
-    fn is_single_line(&self) -> bool { self.inner.is_single_line() }
-
-    fn is_empty(&self) -> bool { self.inner.is_empty() }
-
-    fn fmt(&self, buf: &mut String, indent: usize, interner: &StringInterner) {
-        self.inner.fmt(buf, indent, interner)
-    }
-}
-
-pub(crate) fn dyn_list<'a>(
-    items: &'a [&'a dyn FancyFormat],
-) -> FancyList<&'a dyn FancyFormat> {
-    FancyList(items)
-}
-
-#[macro_export]
-macro_rules! key_values {
-    ($name:literal { $( $e:expr ),* $(,)? }) => {
-        $crate::parser::formatting::FancyKV(
-            $name,
-            $crate::parser::formatting::dyn_list(&[ $( &$e ),* ]),
-        )
-    };
-}
 
 #[test]
 fn test_formatting() {
-    fn test<T: FancyFormat>(s: T, expected: &'static str) {
-        let interner = StringInterner::new();
-        let mut buf = String::new();
-        s.fmt(&mut buf, 0, &interner);
-        assert_eq!(buf.as_str(), expected)
+    struct KV(&'static str, Beauty);
+
+    impl ToBeauty for KV {
+        fn to_beauty(&self) -> Beauty { Beauty::kv(self.0, self.1.clone()) }
     }
 
-    let short_list = FancyList(&["A", "B"]);
-    let short_list2 = FancyList(&["C", "D"]);
-    let short_list3 = FancyList(&["E"]);
-    let empty_list = FancyList::<&str>(&[]);
+    fn kv(k: &'static str, v: impl ToBeauty) -> KV { KV(k, v.to_beauty()) }
 
-    test(FancyKV("Foo", "Bar"), "Foo: Bar");
-    test(FancyKV("Foo", FancyWrap("  Bar", str::trim, false)), "Foo\n   Bar\n");
-    test(FancyKV("Foo", empty_list), "");
-    test(FancyKV("Foo", &short_list), "Foo\n   A\n   B\n");
-    test(FancyKV("Foo", &short_list3), "Foo: E");
-    test(
-        FancyKV("Foo", dyn_list(&[&"A", &FancyKV("Bar", short_list2)])),
+    macro_rules! list {
+        ($( $it:expr ),* $(,)?) => {
+            vec![ $( Box::new($it) as Box<dyn ToBeauty> ),* ]
+        }
+    }
+
+    macro_rules! test {
+        ($s:expr, $expected:expr $(,)?) => {{
+            let output = $s.to_beauty_string(&StringInterner::new());
+            assert_eq!(output.as_str(), $expected)
+        }};
+    }
+
+    test!(kv("Foo", "Bar"), "Foo: Bar");
+    test!(kv("Foo", &[] as &[bool]), "");
+    test!(kv("Foo", list!["A", "B"]), "Foo\n   A\n   B\n");
+    test!(kv("Foo", list!["E"]), "Foo: E");
+    test!(
+        kv("Foo", list!["A", kv("Bar", list!["C", "D"])]),
         "Foo\n   A\n   Bar\n      C\n      D\n",
     );
-    test(
-        FancyKV("Foo", dyn_list(&[&"A", &FancyKV("Bar", &short_list3)])),
-        "Foo\n   A\n   Bar: E\n",
-    );
-    test(
-        FancyKV("Foo", FancyKV("Bar", FancyKV("Baz", short_list))),
+    test!(kv("Foo", list!["A", kv("Bar", list!["E"])]), "Foo\n   A\n   Bar: E\n");
+    test!(
+        kv("Foo", kv("Bar", kv("Baz", list!["A", "B"]))),
         "Foo\n   Bar\n      Baz\n         A\n         B\n",
     );
-    test(FancyKV("Foo", FancyKV("Bar", FancyKV("Baz", short_list3))), "Foo: Bar: Baz: E");
+    test!(kv("Foo", kv("Bar", kv("Baz", list!["E"]))), "Foo: Bar: Baz: E");
 }

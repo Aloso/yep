@@ -40,6 +40,8 @@ impl Ident {
     pub fn lookup<'a>(&self, interner: &'a StringInterner) -> Option<&'a str> {
         interner.resolve(self.0)
     }
+
+    pub fn symbol(&self) -> DefaultSymbol { self.0 }
 }
 
 impl Operator {
@@ -50,6 +52,8 @@ impl Operator {
     pub fn lookup<'a>(&self, interner: &'a StringInterner) -> Option<&'a str> {
         interner.resolve(self.0)
     }
+
+    pub fn symbol(&self) -> DefaultSymbol { self.0 }
 }
 
 impl UpperIdent {
@@ -60,6 +64,8 @@ impl UpperIdent {
     pub fn lookup<'a>(&self, interner: &'a StringInterner) -> Option<&'a str> {
         interner.resolve(self.0)
     }
+
+    pub fn symbol(&self) -> DefaultSymbol { self.0 }
 }
 
 macro_rules! get_value {
