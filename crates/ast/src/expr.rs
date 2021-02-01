@@ -3,7 +3,8 @@ use std::fmt;
 use crate::item::{Name, NamedType, TypeArgument};
 use crate::name::Operator;
 use crate::pattern::Pattern;
-use crate::{Ident, NumberLiteral, Spanned, SpannedList, StringLiteral};
+use crate::token::{Ident, NumberLiteral, StringLiteral};
+use crate::{Spanned, SpannedList};
 
 #[derive(Debug, Clone)]
 pub enum Expr {

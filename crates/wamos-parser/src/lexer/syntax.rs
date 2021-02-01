@@ -1,4 +1,4 @@
-use ast::{Keyword, Punctuation};
+use ast::token::{Keyword, Punctuation};
 use logos::Logos;
 
 /// Intermediate token type for lexing

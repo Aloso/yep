@@ -5,8 +5,7 @@ use crate::key_values;
 use super::formatting::{FancyFormat, FancyKV, FancyList};
 use ast::expr::*;
 use ast::item::*;
-use ast::literal::{NumberLiteral, StringLiteral};
-use ast::name::{Ident, Operator, UpperIdent};
+use ast::token::*;
 
 macro_rules! impl_fancy_format_struct {
     ($name:ident : $s:literal { $( $key:literal => $value:ident ),* $(,)? }) => {

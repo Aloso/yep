@@ -1,4 +1,4 @@
-use ast::TokenKind;
+use ast::token::TokenKind;
 use string_interner::StringInterner;
 use wamos_parser::lexer::{self, Program};
 use wamos_parser::parser::{self, FancyFormat};

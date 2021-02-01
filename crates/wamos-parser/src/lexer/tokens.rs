@@ -1,6 +1,5 @@
-use ast::literal::StringLiteral;
-use ast::name::{Ident, Operator, UpperIdent};
-use ast::{LexError, Spanned, TextRange, Token, TokenData};
+use ast::token::{Ident, Operator, StringLiteral, Token, TokenData, UpperIdent};
+use ast::{LexError, Spanned, TextRange};
 use logos::Lexer;
 use string_interner::StringInterner;
 

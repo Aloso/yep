@@ -1,7 +1,6 @@
 use ast::expr::{Block, Expr};
 use ast::item::*;
-use ast::name::{Ident, UpperIdent};
-use ast::{Keyword, Punctuation, TokenData};
+use ast::token::{Ident, Keyword, Punctuation, TokenData, UpperIdent};
 
 use crate::uoret;
 

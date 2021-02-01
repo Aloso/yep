@@ -1,5 +1,5 @@
 use crate::expr::{Expr, Literal, TypeAscription};
-use crate::Ident;
+use crate::token::Ident;
 
 #[derive(Debug, Clone)]
 pub enum Pattern {

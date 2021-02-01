@@ -1,6 +1,7 @@
 use crate::expr::{Block, Expr};
 use crate::name::{Ident, Operator};
-use crate::{Spanned, SpannedList, UpperIdent};
+use crate::token::UpperIdent;
+use crate::{Spanned, SpannedList};
 
 #[derive(Debug, Clone)]
 pub enum Item {

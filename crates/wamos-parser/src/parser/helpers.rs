@@ -1,5 +1,6 @@
 use ast::item::{GenericParam, TypeArgument};
-use ast::{Keyword, Punctuation, Spanned, SpannedList, TextRange, TokenData};
+use ast::token::{Keyword, Punctuation, TokenData};
+use ast::{Spanned, SpannedList, TextRange};
 
 use super::{Error, LexerMut, Parse, ParseResult};
 

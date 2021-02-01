@@ -1,7 +1,7 @@
 use ast::expr::Expr;
 use ast::item::Item;
-use ast::name::Operator;
-use ast::{Spanned, TextRange, Token, TokenData};
+use ast::token::{Operator, Token, TokenData};
+use ast::{Spanned, TextRange};
 
 pub use self::formatting::FancyFormat;
 

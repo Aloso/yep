@@ -2,9 +2,11 @@ use std::iter::Peekable;
 
 use ast::expr::*;
 use ast::item::{Name, NamedType};
-use ast::literal::{NumberLiteral, StringLiteral};
-use ast::name::{Ident, Operator, UpperIdent};
-use ast::{Keyword, Punctuation, Spanned, TokenData};
+use ast::token::{
+    Ident, Keyword, NumberLiteral, Operator, Punctuation, StringLiteral, TokenData,
+    UpperIdent,
+};
+use ast::Spanned;
 
 use crate::uoret;
 

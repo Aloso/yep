@@ -1,7 +1,8 @@
 use anyhow::{Context, Result};
-use ast::literal::NumberLiteral;
-use ast::{LexError, TokenData};
 use std::borrow::Cow;
+
+use ast::token::{NumberLiteral, TokenData};
+use ast::LexError;
 
 
 trait Int: Copy + 'static {
@@ -207,8 +208,8 @@ mod tests {
 
     use anyhow::{bail, Result};
     use assert_matches::assert_matches;
-    use ast::literal::NumberLiteral::{self, *};
-    use ast::TokenData;
+    use ast::token::NumberLiteral::*;
+    use ast::token::{NumberLiteral, TokenData};
 
     fn parse_number(text: &str) -> Result<NumberLiteral> {
         let mut program = lexer::lex(text);
