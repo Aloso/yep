@@ -1,6 +1,7 @@
-use wamos_parser::lexer::{self, Program, TokenKind};
+use ast::TokenKind;
+use string_interner::StringInterner;
+use wamos_parser::lexer::{self, Program};
 use wamos_parser::parser::{self, FancyFormat};
-use wamos_parser::StringInterner;
 
 const BLUE: &str = "\x1b[38;2;50;220;255m";
 const GREEN: &str = "\x1b[38;2;80;230;100m";

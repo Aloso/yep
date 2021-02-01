@@ -1,48 +1,8 @@
 use anyhow::{Context, Result};
+use ast::literal::NumberLiteral;
+use ast::{LexError, TokenData};
 use std::borrow::Cow;
 
-use super::tokens::{LexError, TokenData};
-
-
-/// Supported literals are
-///
-/// * Signed integer (Int)
-/// * Unsigned integer (UInt)
-/// * Float (Number)
-///
-/// # Grammar
-///
-/// ```no_test
-/// SIGN  := '+' | '-'
-/// E     := 'e' | 'E'
-///
-/// BIN_DIGIT := '0' | '1'
-/// OCT_DIGIT := '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7'
-/// DEC_DIGIT := OCT_DIGIT | '8' | '9'
-/// HEX_DIGIT := DEC_DIGIT | 'a' | 'b' | 'c' | 'd' | 'e' | 'f'
-///                        | 'A' | 'B' | 'C' | 'D' | 'E' | 'F'
-///
-/// BIN_SEQUENCE := BIN_DIGIT (BIN_DIGIT | '_')*
-/// OCT_SEQUENCE := OCT_DIGIT (OCT_DIGIT | '_')*
-/// DEC_SEQUENCE := DEC_DIGIT (DEC_DIGIT | '_')*
-/// HEX_SEQUENCE := HEX_DIGIT (HEX_DIGIT | '_')*
-///
-/// BINARY      := SIGN? '0b' BIN_SEQUENCE
-/// OCTAL       := SIGN? '0o' OCT_SEQUENCE
-/// HEXADECIMAL := SIGN? '0x' HEX_SEQUENCE
-/// DECIMAL     := SIGN? DEC_SEQUENCE
-///
-/// EXPONENT    := E SIGN? DEC_SEQUENCE
-/// FLOAT       := SIGN? DEC_SEQUENCE '.' DEC_SEQUENCE EXPONENT?
-///              | SIGN? DEC_SEQUENCE EXPONENT
-///              | '.' DEC_SEQUENCE EXPONENT?
-/// ```
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub enum NumberLiteral {
-    Int(i64),
-    UInt(u64),
-    Float(f64),
-}
 
 trait Int: Copy + 'static {
     fn zero() -> Self;
@@ -244,32 +204,27 @@ pub(super) fn parse_number(input: &str) -> TokenData {
 #[cfg(test)]
 mod tests {
     use crate::lexer;
-    use crate::lexer::tokens::TokenData;
-
-    use super::NumberLiteral::{self as Num, *};
 
     use anyhow::{bail, Result};
     use assert_matches::assert_matches;
-    use std::str::FromStr;
+    use ast::literal::NumberLiteral::{self, *};
+    use ast::TokenData;
 
-    impl FromStr for Num {
-        type Err = anyhow::Error;
-        fn from_str(text: &str) -> Result<Self> {
-            let mut program = lexer::lex(text);
-            program.no_eof();
-            if program.token_len() != 1 {
-                bail!("expected exactly 1 token, got {:#?}", program);
-            }
-            match program.tokens()[0].data() {
-                TokenData::NumberLit(lit) => Ok(lit),
-                _ => bail!("expected number, got {:#?}", program),
-            }
+    fn parse_number(text: &str) -> Result<NumberLiteral> {
+        let mut program = lexer::lex(text);
+        program.no_eof();
+        if program.token_len() != 1 {
+            bail!("expected exactly 1 token, got {:#?}", program);
+        }
+        match program.tokens()[0].data() {
+            TokenData::NumberLit(lit) => Ok(lit),
+            _ => bail!("expected number, got {:#?}", program),
         }
     }
 
     macro_rules! assert_ok {
         ($s:literal, $p:pat $(if $e:expr)? $(,)?) => {
-            match $s.parse::<Num>() {
+            match parse_number($s) {
                 Ok($p) $(if $e)? => {}
                 Err(e) => panic!("{}", e),
                 p => panic!(
@@ -284,7 +239,7 @@ mod tests {
 
     macro_rules! assert_err {
         ($s:literal, $e:expr $(,)?) => {
-            match $s.parse::<Num>() {
+            match parse_number($s) {
                 Ok(v) => panic!(
                     "Assertion failed:\n  \
                     expected: Err({})\n  \
@@ -299,7 +254,7 @@ mod tests {
                     stringify!($e), s
                 ),
             }
-            assert_matches!($s.parse::<Num>(), Err(s) if &ToString::to_string(&s) == $e);
+            assert_matches!(parse_number($s), Err(s) if &ToString::to_string(&s) == $e);
         };
     }
 

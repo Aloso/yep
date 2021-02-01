@@ -1,3 +1,4 @@
+use ast::{Keyword, Punctuation};
 use logos::Logos;
 
 /// Intermediate token type for lexing
@@ -42,47 +43,6 @@ pub(super) enum IToken<'a> {
     Error,
 }
 
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum Punctuation {
-    Dot,
-    Comma,
-    Colon,
-    Semicolon,
-    Equals,
-    And,
-    Pipe,
-    QuestionMark,
-    Backslash,
-    At,
-    Underscore,
-
-    OpenParen,
-    CloseParen,
-    OpenBracket,
-    CloseBracket,
-    OpenBrace,
-    CloseBrace,
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum Keyword {
-    // Constructs
-    Fun,
-    Type,
-    Class,
-    Enum,
-    Impl,
-
-    // Expressions
-    Let,
-    Var,
-    Case,
-    And,
-    Or,
-    Not,
-    For,
-}
 
 pub(super) fn parse_keyword(s: &str) -> Option<Keyword> {
     Some(match s {

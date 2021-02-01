@@ -40,6 +40,3 @@ impl<T: fmt::Debug> fmt::Debug for Spanned<T> {
 impl<T> From<(T, TextRange)> for Spanned<T> {
     fn from((inner, span): (T, TextRange)) -> Self { Self { inner, span } }
 }
-
-// TODO: Use something like smallvec or tinyvec instead
-pub type SpannedList<T> = Box<[Spanned<T>]>;

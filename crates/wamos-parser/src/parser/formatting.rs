@@ -1,4 +1,5 @@
-use crate::{Spanned, StringInterner, TextRange};
+use ast::{Spanned, TextRange};
+use string_interner::StringInterner;
 
 fn do_indent(buf: &mut String, indent: usize) { buf.extend((0..indent).map(|_| ' ')); }
 

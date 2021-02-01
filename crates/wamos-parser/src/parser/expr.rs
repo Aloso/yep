@@ -1,161 +1,15 @@
-use std::fmt;
 use std::iter::Peekable;
 
-use crate::lexer::{
-    Ident, Keyword, NumberLiteral, Operator, Punctuation, StringLiteral, TokenData,
-    UpperIdent,
-};
-use crate::{uoret, Spanned, SpannedList};
+use ast::expr::*;
+use ast::item::{Name, NamedType};
+use ast::literal::{NumberLiteral, StringLiteral};
+use ast::name::{Ident, Operator, UpperIdent};
+use ast::{Keyword, Punctuation, Spanned, TokenData};
+
+use crate::uoret;
 
 use super::helpers::*;
-use super::items::*;
-use super::patterns::Pattern;
 use super::{Error, LexerMut, Parse, ParseResult};
-
-#[derive(Debug, Clone)]
-pub enum Expr {
-    Invokable(Invokable),
-    Literal(Literal),
-    ParenCall(ParenCall),
-    MemberCall(MemberCall),
-    Operation(Operation),
-    ShortcircuitingOp(ScOperation),
-    Assignment(Assignment),
-    TypeAscription(TypeAscription),
-    Statement(Box<Spanned<Expr>>),
-    Lambda(Lambda),
-    Block(Block),
-    Tuple(Parens),
-    Empty(Empty),
-
-    Declaration(Declaration),
-    Case(Case),
-}
-
-#[derive(Debug, Clone)]
-pub struct Invokable {
-    pub name: Spanned<Name>,
-    pub generics: Spanned<SpannedList<TypeArgument>>,
-}
-
-#[derive(Copy, Clone)]
-pub enum Literal {
-    NumberLit(NumberLiteral),
-    StringLit(StringLiteral),
-}
-
-impl fmt::Debug for Literal {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Literal::NumberLit(x) => write!(f, "{:?}", x),
-            Literal::StringLit(x) => write!(f, "{:?}", x),
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct ParenCall {
-    pub receiver: Box<Spanned<Expr>>,
-    pub args: Option<SpannedList<FunCallArgument>>,
-}
-
-#[derive(Debug, Clone)]
-pub struct MemberCall {
-    pub receiver: Box<Spanned<Expr>>,
-    pub member: Invokable,
-}
-
-#[derive(Debug, Clone)]
-pub struct Operation {
-    pub operator: Operator,
-    pub lhs: Box<Spanned<Expr>>,
-    pub rhs: Box<Spanned<Expr>>,
-}
-
-/// Short-circuiting
-#[derive(Debug, Clone)]
-pub struct ScOperation {
-    pub operator: ScOperator,
-    pub lhs: Box<Spanned<Expr>>,
-    pub rhs: Box<Spanned<Expr>>,
-}
-
-#[derive(Debug, Clone)]
-pub struct Assignment {
-    pub lhs: Box<Spanned<Expr>>,
-    pub rhs: Box<Spanned<Expr>>,
-}
-
-/// Short-circuiting
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ScOperator {
-    And,
-    Or,
-}
-
-/// 56 bytes
-#[derive(Debug, Clone)]
-pub struct TypeAscription {
-    pub expr: Box<Spanned<Expr>>,
-    pub ty: NamedType,
-}
-
-#[derive(Debug, Clone)]
-pub struct Lambda {
-    pub args: Spanned<SpannedList<LambdaArgument>>,
-    pub body: Box<Spanned<Expr>>,
-}
-
-#[derive(Debug, Clone)]
-pub struct Block {
-    pub exprs: SpannedList<Expr>,
-    pub ends_with_semicolon: bool,
-}
-
-#[derive(Debug, Clone)]
-pub struct Parens {
-    pub exprs: SpannedList<FunCallArgument>,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct Empty;
-
-#[derive(Debug, Clone)]
-pub struct Declaration {
-    pub decl_kind: DeclKind,
-    pub name: Spanned<Ident>,
-    pub value: Box<Spanned<Expr>>,
-}
-
-#[derive(Debug, Clone)]
-pub struct Case {
-    pub expr: Box<Spanned<Expr>>,
-    pub match_arms: Vec<MatchArm>,
-}
-
-#[derive(Debug, Clone)]
-pub struct FunCallArgument {
-    pub name: Option<Spanned<Ident>>,
-    pub expr: Spanned<Expr>,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub enum DeclKind {
-    Let,
-    Var,
-}
-
-#[derive(Debug, Clone)]
-pub struct LambdaArgument {
-    pub name: Spanned<Ident>,
-    pub ty: Option<Spanned<NamedType>>,
-}
-
-#[derive(Debug, Clone)]
-pub struct MatchArm {
-    pub pattern: Pattern,
-    pub expr: Expr,
-}
 
 impl Parse for Expr {
     fn parse(lexer: LexerMut) -> ParseResult<Self> {
@@ -349,10 +203,6 @@ impl Parse for Parens {
         let span2 = lexer.expect(Punctuation::CloseParen)?;
         Ok(Some(span1.merge(span2).embed(Parens { exprs })))
     }
-}
-
-impl Parens {
-    fn into_fun_call_args(self) -> SpannedList<FunCallArgument> { self.exprs }
 }
 
 impl Parse for LambdaArgument {
@@ -610,18 +460,6 @@ impl ExprPart {
             e => panic!("Expected name, infix operator, `.` or `=`, got {:?}", e),
         };
         Ok(span.embed(data))
-    }
-}
-
-impl Expr {
-    fn to_operator(&self) -> Option<Operator> {
-        match self {
-            Expr::Invokable(i) => match *i.name {
-                Name::Operator(o) => Some(o),
-                _ => None,
-            },
-            _ => None,
-        }
     }
 }
 

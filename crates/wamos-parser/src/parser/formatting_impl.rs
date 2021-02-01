@@ -1,11 +1,12 @@
 use string_interner::StringInterner;
 
 use crate::key_values;
-use crate::lexer::{Ident, NumberLiteral, Operator, StringLiteral, UpperIdent};
 
-use super::expr::*;
 use super::formatting::{FancyFormat, FancyKV, FancyList};
-use super::items::*;
+use ast::expr::*;
+use ast::item::*;
+use ast::literal::{NumberLiteral, StringLiteral};
+use ast::name::{Ident, Operator, UpperIdent};
 
 macro_rules! impl_fancy_format_struct {
     ($name:ident : $s:literal { $( $key:literal => $value:ident ),* $(,)? }) => {

@@ -1,16 +1,11 @@
-mod idents;
 pub(super) mod numbers;
 mod syntax;
 mod tokens;
 
 use std::fmt;
 
-use crate::{Spanned, StringInterner};
-
-pub use idents::{Ident, Operator, StringLiteral, UpperIdent};
-pub use numbers::NumberLiteral;
-pub use syntax::{Keyword, Punctuation};
-pub use tokens::{LexError, Token, TokenData, TokenKind};
+use ast::{LexError, Spanned, Token, TokenData};
+use string_interner::StringInterner;
 
 pub fn lex(text: &str) -> Program<'_> {
     let mut interner = StringInterner::new();

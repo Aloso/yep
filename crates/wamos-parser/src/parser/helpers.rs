@@ -1,8 +1,7 @@
-use super::items::{GenericParam, TypeArgument};
-use super::{Error, LexerMut, Parse, ParseResult};
+use ast::item::{GenericParam, TypeArgument};
+use ast::{Keyword, Punctuation, Spanned, SpannedList, TextRange, TokenData};
 
-use crate::lexer::{Keyword, Punctuation, TokenData};
-use crate::{Spanned, SpannedList, TextRange};
+use super::{Error, LexerMut, Parse, ParseResult};
 
 /// unwrap or return
 #[macro_export]
