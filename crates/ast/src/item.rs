@@ -20,7 +20,6 @@ pub struct NamedType {
 pub enum TypeArgument {
     Type(NamedType),
     Wildcard,
-    // TODO: Tuple type
 }
 
 #[derive(Debug, Clone)]
@@ -48,9 +47,9 @@ pub struct FunArgument {
 
 #[derive(Debug, Clone)]
 pub struct Class {
-    pub name: UpperIdent,
-    pub generics: Vec<GenericParam>,
-    pub fields: Vec<ClassField>,
+    pub name: Spanned<UpperIdent>,
+    pub generics: Spanned<SpannedList<GenericParam>>,
+    pub fields: Spanned<SpannedList<ClassField>>,
 }
 
 #[derive(Debug, Clone)]
@@ -66,20 +65,20 @@ pub enum TypeBound {
 
 #[derive(Debug, Clone)]
 pub struct ClassField {
-    pub name: Ident,
-    pub ty: Option<NamedType>,
-    pub default: Option<Expr>,
+    pub name: Spanned<Ident>,
+    pub ty: Option<Spanned<NamedType>>,
+    pub default: Option<Spanned<Expr>>,
 }
 
 #[derive(Debug, Clone)]
 pub struct Enum {
-    pub name: UpperIdent,
-    pub generics: Vec<GenericParam>,
-    pub variants: Vec<EnumVariant>,
+    pub name: Spanned<UpperIdent>,
+    pub generics: Spanned<SpannedList<GenericParam>>,
+    pub variants: Spanned<SpannedList<EnumVariant>>,
 }
 
 #[derive(Debug, Clone)]
 pub struct EnumVariant {
-    pub name: Ident,
-    pub argument: Option<NamedType>,
+    pub name: Spanned<Ident>,
+    pub arguments: Option<Spanned<SpannedList<ClassField>>>,
 }

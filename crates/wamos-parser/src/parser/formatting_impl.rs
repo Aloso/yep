@@ -28,11 +28,15 @@ macro_rules! beauty_impl {
 }
 
 impl ToBeauty for NumberLiteral {
-    fn to_beauty(&self) -> Beauty { Beauty { data: BeautyData::Number(*self), num: 1 } }
+    fn to_beauty(&self) -> Beauty {
+        Beauty { data: BeautyData::Number(*self), num: 1 }
+    }
 }
 
 impl ToBeauty for StringLiteral {
-    fn to_beauty(&self) -> Beauty { Beauty { data: BeautyData::String(*self), num: 1 } }
+    fn to_beauty(&self) -> Beauty {
+        Beauty { data: BeautyData::String(*self), num: 1 }
+    }
 }
 
 impl ToBeauty for DeclKind {
@@ -54,19 +58,27 @@ impl ToBeauty for ScOperator {
 }
 
 impl ToBeauty for DefaultSymbol {
-    fn to_beauty(&self) -> Beauty { Beauty { data: BeautyData::Interned(*self), num: 1 } }
+    fn to_beauty(&self) -> Beauty {
+        Beauty { data: BeautyData::Interned(*self), num: 1 }
+    }
 }
 
 impl ToBeauty for Ident {
-    fn to_beauty(&self) -> Beauty { Beauty::kv("Ident", self.symbol().to_beauty()) }
+    fn to_beauty(&self) -> Beauty {
+        Beauty::kv("Ident", self.symbol().to_beauty())
+    }
 }
 
 impl ToBeauty for UpperIdent {
-    fn to_beauty(&self) -> Beauty { Beauty::kv("UpperIdent", self.symbol().to_beauty()) }
+    fn to_beauty(&self) -> Beauty {
+        Beauty::kv("UpperIdent", self.symbol().to_beauty())
+    }
 }
 
 impl ToBeauty for Operator {
-    fn to_beauty(&self) -> Beauty { Beauty::kv("Operator", self.symbol().to_beauty()) }
+    fn to_beauty(&self) -> Beauty {
+        Beauty::kv("Operator", self.symbol().to_beauty())
+    }
 }
 
 beauty_impl! {
@@ -78,11 +90,19 @@ beauty_impl! {
 }
 
 beauty_impl! {
-    struct Class { /* name, generics, fields */ }
+    struct Class { name, generics, fields }
 }
 
 beauty_impl! {
-    struct Enum { /* name, generics, variants */ }
+    struct Enum { name, generics, variants }
+}
+
+beauty_impl! {
+    struct ClassField { name, ty, default }
+}
+
+beauty_impl! {
+    struct EnumVariant { name, arguments }
 }
 
 beauty_impl! {
@@ -94,7 +114,9 @@ beauty_impl! {
 }
 
 impl ToBeauty for TypeBound {
-    fn to_beauty(&self) -> Beauty { match *self {} }
+    fn to_beauty(&self) -> Beauty {
+        match *self {}
+    }
 }
 
 beauty_impl! {
@@ -121,7 +143,6 @@ beauty_impl! {
         Block, Empty, Declaration, Case, Statement, Tuple
     }
 }
-
 
 beauty_impl! {
     struct Invokable { name, generics }
@@ -176,7 +197,9 @@ beauty_impl! {
 }
 
 impl ToBeauty for Empty {
-    fn to_beauty(&self) -> Beauty { "Empty".to_beauty() }
+    fn to_beauty(&self) -> Beauty {
+        "Empty".to_beauty()
+    }
 }
 
 beauty_impl! {

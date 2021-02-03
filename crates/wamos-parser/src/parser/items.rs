@@ -83,7 +83,7 @@ impl Parse for FunArgument {
 
         let mut fun_arg = FunArgument { name, ty, default: None };
         if rest.eat(Punctuation::Equals).is_some() {
-            let expr = Expr::parse_expect(rest, "default expression")?;
+            let expr = Expr::parse_expect(rest, "default value")?;
             span = span.merge(expr.span);
             fun_arg.default = Some(expr);
         }
@@ -104,16 +104,67 @@ impl Parse for Name {
 }
 
 impl Parse for Class {
-    fn parse(_rest: LexerMut) -> ParseResult<Self> {
-        // TODO
-        Ok(None)
+    fn parse(lexer: LexerMut) -> ParseResult<Self> {
+        let span1 = uoret!(lexer.eat(Keyword::Class));
+        let name = UpperIdent::parse_expect(lexer, "class name")?;
+        let generics = parse_generics(lexer)?.unwrap_or_default();
+        let fields = enclose_multiple_expect(
+            ClassField::parse,
+            Punctuation::OpenParen,
+            Punctuation::Comma,
+            Punctuation::CloseParen,
+            true,
+        )(lexer)?;
+        let span2 = lexer.expect(Punctuation::Semicolon)?;
+
+        Ok(Some(span1.merge(span2).embed(Class { name, generics, fields })))
+    }
+}
+
+impl Parse for ClassField {
+    fn parse(rest: LexerMut) -> ParseResult<Self> {
+        let name = uoret!(Ident::parse(rest)?);
+        let ty = NamedType::parse(rest)?;
+        let mut span = name.span.merge_if(&ty);
+
+        let mut class_field = ClassField { name, ty, default: None };
+        if rest.eat(Punctuation::Equals).is_some() {
+            let expr = Expr::parse_expect(rest, "default value")?;
+            span = span.merge(expr.span);
+            class_field.default = Some(expr);
+        }
+        Ok(Some(span.embed(class_field)))
     }
 }
 
 impl Parse for Enum {
-    fn parse(_rest: LexerMut) -> ParseResult<Self> {
-        // TODO
-        Ok(None)
+    fn parse(lexer: LexerMut) -> ParseResult<Self> {
+        let span = uoret!(lexer.eat(Keyword::Enum));
+        let name = UpperIdent::parse_expect(lexer, "enum name")?;
+        let generics = parse_generics(lexer)?.unwrap_or_default();
+        let variants = enclose_multiple_expect(
+            EnumVariant::parse,
+            Punctuation::OpenBrace,
+            Punctuation::Comma,
+            Punctuation::CloseBrace,
+            true,
+        )(lexer)?;
+
+        Ok(Some(span.merge(variants.span).embed(Enum { name, generics, variants })))
+    }
+}
+
+impl Parse for EnumVariant {
+    fn parse(lexer: LexerMut) -> ParseResult<Self> {
+        let name = uoret!(Ident::parse(lexer)?);
+        let arguments = enclose_multiple(
+            ClassField::parse,
+            Punctuation::OpenParen,
+            Punctuation::Comma,
+            Punctuation::CloseParen,
+            true,
+        )(lexer)?;
+        Ok(Some(name.span.merge_if(&arguments).embed(EnumVariant { name, arguments })))
     }
 }
 

@@ -22,9 +22,11 @@ struct Lexer<'a, 'b> {
 }
 
 impl<'a, 'b> Lexer<'a, 'b> {
-    fn from_tokens(tokens: &'a [Spanned<Token<'b>>]) -> Self { Self { tokens } }
+    fn from_tokens(tokens: &'a [Spanned<Token<'b>>]) -> Self {
+        Self { tokens }
+    }
 
-    /// Returns `Some(())` and advances the lexer if the next token matches
+    /// Returns `Some(span)` and advances the lexer if the next token matches
     /// `elem`
     #[must_use]
     fn eat(&mut self, token: impl Into<TokenData>) -> Option<TextRange> {
@@ -55,9 +57,13 @@ impl<'a, 'b> Lexer<'a, 'b> {
     }
 
     /// Return the next token _without_ advancing the lexer
-    fn peek(&self) -> &Token { &self.tokens[0].inner }
+    fn peek(&self) -> &Token {
+        &self.tokens[0].inner
+    }
 
-    fn len(&self) -> usize { self.tokens.len() }
+    fn len(&self) -> usize {
+        self.tokens.len()
+    }
 
     fn finish(&mut self) -> Result<(), Error> {
         if self.tokens.is_empty()
@@ -126,7 +132,6 @@ trait Parse: Sized {
         }
     }
 }
-
 
 #[cfg(test)]
 mod tests {

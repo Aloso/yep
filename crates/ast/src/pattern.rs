@@ -13,7 +13,6 @@ pub enum Pattern {
     TypeAscription(TypeAscription),
     Or(Vec<Pattern>),
     Guard(GuardPattern),
-    // TODO: Tuple patterns
 }
 
 #[derive(Debug, Clone)]

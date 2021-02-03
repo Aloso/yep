@@ -327,7 +327,6 @@ pub(super) enum ExprPartKind {
 
 impl Parse for ExprPart {
     fn parse(lexer: LexerMut) -> ParseResult<Self> {
-        #[allow(clippy::unnecessary_wraps)]
         fn parse_and_or_dot_equals(lexer: LexerMut) -> ParseResult<ExprPart> {
             let part = match lexer.peek().data() {
                 TokenData::Keyword(Keyword::And) => ExprPart::And,
