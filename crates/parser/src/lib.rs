@@ -4,6 +4,7 @@ use ast::expr::Expr;
 use ast::item::Item;
 use ast::token::{Operator, Token, TokenData};
 use ast::{Spanned, TextRange};
+use validation::{Validate, ValidationError};
 
 pub use self::formatting::ToBeauty;
 
@@ -13,6 +14,7 @@ mod formatting_impl;
 mod helpers;
 pub mod items;
 pub mod patterns;
+mod validation;
 
 type Tokens<'a> = &'a [Token<'a>];
 type ParseResult<T> = Result<Option<Spanned<T>>, Error>;
@@ -79,6 +81,7 @@ impl<'a, 'b> Lexer<'a, 'b> {
             results.push(result);
         }
         self.finish()?;
+        results.validate(())?;
         Ok(results)
     }
 }
@@ -112,6 +115,9 @@ pub enum Error {
          e.g. `{{+}}`"
     )]
     OperatorInsteadOfOperand(Operator),
+
+    #[error("{0}")]
+    ValidationError(#[from] ValidationError),
 }
 
 trait Parse: Sized {
@@ -137,7 +143,7 @@ mod tests {
         match super::parse(lexed.tokens()) {
             Ok(items) => {
                 let actual = format!("{:#?}", items);
-                let changes = difference::Changeset::new(&actual, out, "\n");
+                let changes = difference::Changeset::new(out, &actual, "\n");
                 if changes.distance > 0 {
                     eprintln!("{}", changes);
                     panic!(
@@ -147,6 +153,7 @@ mod tests {
                 }
             }
             Err(err) => {
+                eprintln!("{}", code);
                 panic!("{}", err);
             }
         }
@@ -155,7 +162,7 @@ mod tests {
     #[test]
     fn test() {
         parsed_equals(
-            "fun foo[T](x List[T], y) List[T] {
+            "fun foo[T](x List[T], y Int) List[T] {
     x = x.map(y) List[T];
     assert(x.len != 0);
     x
@@ -192,22 +199,27 @@ mod tests {
                 } @ 11..20,
                 FunArgument {
                     name: Ident #5,
-                    ty: None,
+                    ty: Some(
+                        NamedType {
+                            name: UpperIdent #6 @ 24..27,
+                            args: [] @ 0..0,
+                        } @ 24..27,
+                    ),
                     default: None,
-                } @ 22..23,
-            ] @ 10..24,
+                } @ 22..27,
+            ] @ 10..28,
             return_ty: Some(
                 NamedType {
-                    name: UpperIdent #4 @ 25..29,
+                    name: UpperIdent #4 @ 29..33,
                     args: [
                         Type(
                             NamedType {
-                                name: UpperIdent #2 @ 30..31,
+                                name: UpperIdent #2 @ 34..35,
                                 args: [] @ 0..0,
                             },
-                        ) @ 30..31,
-                    ] @ 29..32,
-                } @ 25..32,
+                        ) @ 34..35,
+                    ] @ 33..36,
+                } @ 29..36,
             ),
             body: Some(
                 Block {
@@ -218,10 +230,10 @@ mod tests {
                                     Invokable {
                                         name: Ident(
                                             Ident #3,
-                                        ) @ 39..40,
+                                        ) @ 43..44,
                                         generics: [] @ 0..0,
                                     },
-                                ) @ 39..40,
+                                ) @ 43..44,
                                 rhs: TypeAscription(
                                     TypeAscription {
                                         expr: ParenCall(
@@ -232,18 +244,18 @@ mod tests {
                                                             Invokable {
                                                                 name: Ident(
                                                                     Ident #3,
-                                                                ) @ 43..44,
+                                                                ) @ 47..48,
                                                                 generics: [] @ 0..0,
                                                             },
-                                                        ) @ 43..44,
+                                                        ) @ 47..48,
                                                         member: Invokable {
                                                             name: Ident(
-                                                                Ident #6,
-                                                            ) @ 45..48,
+                                                                Ident #7,
+                                                            ) @ 49..52,
                                                             generics: [] @ 0..0,
                                                         },
                                                     },
-                                                ) @ 43..48,
+                                                ) @ 47..52,
                                                 args: Some(
                                                     [
                                                         FunCallArgument {
@@ -252,89 +264,89 @@ mod tests {
                                                                 Invokable {
                                                                     name: Ident(
                                                                         Ident #5,
-                                                                    ) @ 49..50,
+                                                                    ) @ 53..54,
                                                                     generics: [] @ 0..0,
                                                                 },
-                                                            ) @ 49..50,
-                                                        } @ 49..50,
+                                                            ) @ 53..54,
+                                                        } @ 53..54,
                                                     ],
                                                 ),
                                             },
-                                        ) @ 43..51,
+                                        ) @ 47..55,
                                         ty: NamedType {
-                                            name: UpperIdent #4 @ 52..56,
+                                            name: UpperIdent #4 @ 56..60,
                                             args: [
                                                 Type(
                                                     NamedType {
-                                                        name: UpperIdent #2 @ 57..58,
+                                                        name: UpperIdent #2 @ 61..62,
                                                         args: [] @ 0..0,
                                                     },
-                                                ) @ 57..58,
-                                            ] @ 56..59,
+                                                ) @ 61..62,
+                                            ] @ 60..63,
                                         },
                                     },
-                                ) @ 43..59,
+                                ) @ 47..63,
                             },
-                        ) @ 39..59,
+                        ) @ 43..63,
                         ParenCall(
                             ParenCall {
                                 receiver: Invokable(
                                     Invokable {
                                         name: Ident(
-                                            Ident #7,
-                                        ) @ 65..71,
+                                            Ident #8,
+                                        ) @ 69..75,
                                         generics: [] @ 0..0,
                                     },
-                                ) @ 65..71,
+                                ) @ 69..75,
                                 args: Some(
                                     [
                                         FunCallArgument {
                                             name: None,
                                             expr: Operation(
                                                 Operation {
-                                                    operator: Operator #9,
+                                                    operator: Operator #10,
                                                     lhs: MemberCall(
                                                         MemberCall {
                                                             receiver: Invokable(
                                                                 Invokable {
                                                                     name: Ident(
                                                                         Ident #3,
-                                                                    ) @ 72..73,
+                                                                    ) @ 76..77,
                                                                     generics: [] @ 0..0,
                                                                 },
-                                                            ) @ 72..73,
+                                                            ) @ 76..77,
                                                             member: Invokable {
                                                                 name: Ident(
-                                                                    Ident #8,
-                                                                ) @ 74..77,
+                                                                    Ident #9,
+                                                                ) @ 78..81,
                                                                 generics: [] @ 0..0,
                                                             },
                                                         },
-                                                    ) @ 72..77,
+                                                    ) @ 76..81,
                                                     rhs: Literal(
                                                         Int(0),
-                                                    ) @ 81..82,
+                                                    ) @ 85..86,
                                                 },
-                                            ) @ 72..82,
-                                        } @ 72..82,
+                                            ) @ 76..86,
+                                        } @ 76..86,
                                     ],
                                 ),
                             },
-                        ) @ 65..83,
+                        ) @ 69..87,
                         Invokable(
                             Invokable {
                                 name: Ident(
                                     Ident #3,
-                                ) @ 89..90,
+                                ) @ 93..94,
                                 generics: [] @ 0..0,
                             },
-                        ) @ 89..90,
+                        ) @ 93..94,
                     ],
                     ends_with_semicolon: false,
-                } @ 33..92,
+                } @ 37..96,
             ),
         },
-    ) @ 0..92,
+    ) @ 0..96,
 ]",
         );
     }

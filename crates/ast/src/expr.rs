@@ -36,6 +36,45 @@ impl Expr {
             _ => None,
         }
     }
+
+    pub fn kind(&self) -> ExprKind {
+        match self {
+            Expr::Invokable(_) => ExprKind::Invokable,
+            Expr::Literal(_) => ExprKind::Literal,
+            Expr::ParenCall(_) => ExprKind::ParenCall,
+            Expr::MemberCall(_) => ExprKind::MemberCall,
+            Expr::Operation(_) => ExprKind::Operation,
+            Expr::ShortcircuitingOp(_) => ExprKind::ShortcircuitingOp,
+            Expr::Assignment(_) => ExprKind::Assignment,
+            Expr::TypeAscription(_) => ExprKind::TypeAscription,
+            Expr::Statement(_) => ExprKind::Statement,
+            Expr::Lambda(_) => ExprKind::Lambda,
+            Expr::Block(_) => ExprKind::Block,
+            Expr::Tuple(_) => ExprKind::Tuple,
+            Expr::Empty(_) => ExprKind::Empty,
+            Expr::Declaration(_) => ExprKind::Declaration,
+            Expr::Case(_) => ExprKind::Case,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ExprKind {
+    Invokable,
+    Literal,
+    ParenCall,
+    MemberCall,
+    Operation,
+    ShortcircuitingOp,
+    Assignment,
+    TypeAscription,
+    Statement,
+    Lambda,
+    Block,
+    Tuple,
+    Empty,
+    Declaration,
+    Case,
 }
 
 #[derive(Debug, Clone)]
