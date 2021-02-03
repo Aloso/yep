@@ -1,0 +1,9 @@
+class Foo(x Int, y Int)
+
+class Bar[T](x T, y T)
+
+impl[T Clone] Clone for Bar[T] {
+    fun clone(self) Bar[T] {
+        Bar(.x.clone, .y.clone)
+    }
+}

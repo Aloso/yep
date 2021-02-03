@@ -8,11 +8,9 @@ edition = "2018"
 
 [dependencies]
 ast = { path = "../ast" }
-anyhow = "1.0"
 string-interner = "0.12"
 thiserror = "1.0"
 
 [dev-dependencies]
 lexer = { path = "../lexer" }
-assert_matches = "1.4"
 difference = "2.0"

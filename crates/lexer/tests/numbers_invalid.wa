@@ -1,0 +1,16 @@
++-0
+--0
+0x_
+0xF_G
+0b012
+_1
+1e
+1e__
+1e_+1
+.12345e2345
+0f.1
+
+# things that look like a number but aren't:
+_.1
+-.1
+0._1

@@ -1,0 +1,7 @@
+# This is a
+# very cool function!
+fun foo() Bool {
+    let x-y = 5 Int;
+    var test! = \ x-y >gt 42;
+    test!()
+}

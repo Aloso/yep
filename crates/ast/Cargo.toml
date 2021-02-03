@@ -8,3 +8,4 @@ edition = "2018"
 
 [dependencies]
 string-interner = "0.12.2"
+thiserror = "1.0"

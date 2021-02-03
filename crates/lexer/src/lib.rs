@@ -28,17 +28,11 @@ pub struct Program<'a> {
 }
 
 impl<'a> Program<'a> {
-    pub fn token_len(&self) -> usize {
-        self.tokens.len()
-    }
+    pub fn token_len(&self) -> usize { self.tokens.len() }
 
-    pub fn tokens(&'a self) -> &'a [Spanned<Token<'a>>] {
-        &self.tokens
-    }
+    pub fn tokens(&'a self) -> &'a [Spanned<Token<'a>>] { &self.tokens }
 
-    pub fn text(&self) -> &str {
-        self.text
-    }
+    pub fn text(&self) -> &str { self.text }
 
     pub fn errors(&self) -> Vec<LexError> {
         let mut lex_errors = Vec::new();
@@ -95,142 +89,41 @@ impl fmt::Debug for Program<'_> {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    macro_rules! assert_list {
-        ($input:expr, $fmt:literal) => {{
-            let p = super::lex($input);
+#[test]
+fn run_test_files() {
+    use std::ffi::OsStr;
+    use std::fs::{read_to_string, File};
+    use std::io::Write;
+
+    for file in std::fs::read_dir("./tests").unwrap() {
+        let path = file.unwrap().path();
+        if path.is_file() && path.extension() == Some(OsStr::new("wa")) {
+            let content: String = read_to_string(&path).unwrap();
+            let content = content.trim_end();
+
+            let p = crate::lex(&content);
             let formatted = format!("{:<#?}", p);
-            assert!(formatted == $fmt, "{}  doesn't equal  {}", formatted, $fmt);
-        }};
-    }
 
-    #[test]
-    fn test_tokens() {
-        assert_list!(
-            "hello, world!",
-            r#"[
-    i`hello` @ 0..5
-    `,` @ 5..6
-    i`world!` @ 7..13
-    EOF @ 13..13
-]"#
-        );
-    }
+            let tokens_path = path.with_extension("tokens");
+            if tokens_path.exists() {
+                let expected: String = read_to_string(tokens_path).unwrap();
+                let expected = expected.trim_end();
 
-    #[test]
-    fn test_function() {
-        assert_list!(
-            "\
-# This is a
-# very cool function!
-fun foo() Bool {
-    let x-y = 5 Int;
-    var test! = \\ x-y >gt 42;
-    test!()
-}",
-            r#"[
-    k`fun` @ 34..37
-    i`foo` @ 38..41
-    `(` @ 41..42
-    `)` @ 42..43
-    I`Bool` @ 44..48
-    `{` @ 49..50
-    k`let` @ 55..58
-    i`x-y` @ 59..62
-    `=` @ 63..64
-    Int(5)@`5` @ 65..66
-    I`Int` @ 67..70
-    `;` @ 70..71
-    k`var` @ 76..79
-    i`test!` @ 80..85
-    `=` @ 86..87
-    `\` @ 88..89
-    i`x-y` @ 90..93
-    o`>gt` @ 94..97
-    Int(42)@`42` @ 98..100
-    `;` @ 100..101
-    i`test!` @ 106..111
-    `(` @ 111..112
-    `)` @ 112..113
-    `}` @ 114..115
-    EOF @ 115..115
-]"#
-        );
-    }
-
-    #[test]
-    fn test_types() {
-        assert_list!(
-            "class Foo(x Int, y Int)
-
-            class Bar[T](x T, y T)
-
-            impl[T Clone] Clone for Bar[T] {
-                fun clone(self) Bar[T] {
-                    Bar(.x.clone, .y.clone)
+                if expected != formatted {
+                    let changes = difference::Changeset::new(expected, &formatted, "\n");
+                    eprintln!("{}", changes);
+                    eprintln!("Input:\n{}", content);
+                    panic!(
+                        "{} differences between expected and actual output",
+                        changes.distance
+                    );
                 }
-            }",
-            r#"[
-    k`class` @ 0..5
-    I`Foo` @ 6..9
-    `(` @ 9..10
-    i`x` @ 10..11
-    I`Int` @ 12..15
-    `,` @ 15..16
-    i`y` @ 17..18
-    I`Int` @ 19..22
-    `)` @ 22..23
-    k`class` @ 37..42
-    I`Bar` @ 43..46
-    `[` @ 46..47
-    I`T` @ 47..48
-    `]` @ 48..49
-    `(` @ 49..50
-    i`x` @ 50..51
-    I`T` @ 52..53
-    `,` @ 53..54
-    i`y` @ 55..56
-    I`T` @ 57..58
-    `)` @ 58..59
-    k`impl` @ 73..77
-    `[` @ 77..78
-    I`T` @ 78..79
-    I`Clone` @ 80..85
-    `]` @ 85..86
-    I`Clone` @ 87..92
-    k`for` @ 93..96
-    I`Bar` @ 97..100
-    `[` @ 100..101
-    I`T` @ 101..102
-    `]` @ 102..103
-    `{` @ 104..105
-    k`fun` @ 122..125
-    i`clone` @ 126..131
-    `(` @ 131..132
-    i`self` @ 132..136
-    `)` @ 136..137
-    I`Bar` @ 138..141
-    `[` @ 141..142
-    I`T` @ 142..143
-    `]` @ 143..144
-    `{` @ 145..146
-    I`Bar` @ 167..170
-    `(` @ 170..171
-    `.` @ 171..172
-    i`x` @ 172..173
-    `.` @ 173..174
-    i`clone` @ 174..179
-    `,` @ 179..180
-    `.` @ 181..182
-    i`y` @ 182..183
-    `.` @ 183..184
-    i`clone` @ 184..189
-    `)` @ 189..190
-    `}` @ 207..208
-    `}` @ 221..222
-    EOF @ 222..222
-]"#
-        )
+            } else {
+                let mut file = File::create(tokens_path).unwrap();
+                file.write_all(formatted.as_bytes()).unwrap();
+                file.write_all(b"\n").unwrap();
+                file.flush().unwrap();
+            }
+        }
     }
 }
