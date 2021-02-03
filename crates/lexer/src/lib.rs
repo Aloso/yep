@@ -3,10 +3,9 @@ mod syntax;
 mod tokens;
 
 use std::fmt;
-use string_interner::StringInterner;
 
 use ast::token::{Token, TokenData};
-use ast::{LexError, Spanned};
+use ast::{LexError, Spanned, StringInterner};
 
 pub fn lex(text: &str) -> Program<'_> {
     let mut interner = StringInterner::new();

@@ -1,7 +1,6 @@
 use ast::token::{Ident, Operator, StringLiteral, Token, TokenData, UpperIdent};
-use ast::{LexError, Spanned, TextRange};
+use ast::{LexError, Spanned, StringInterner, TextRange};
 use logos::Lexer;
-use string_interner::StringInterner;
 
 use super::numbers;
 use super::syntax::{parse_keyword, IToken};

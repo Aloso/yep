@@ -54,7 +54,6 @@ dependencies = [
  "ast",
  "difference",
  "logos",
- "string-interner",
 ]
 
 [[package]]
@@ -88,7 +87,6 @@ dependencies = [
  "ast",
  "difference",
  "lexer",
- "string-interner",
  "thiserror",
 ]
 
@@ -123,14 +121,7 @@ dependencies = [
  "ast",
  "lexer",
  "parser",
- "string-interner",
 ]
-
-[[package]]
-name = "serde"
-version = "1.0.123"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "92d5161132722baa40d802cc70b15262b98258453e85e5d1d365c757c73869ae"
 
 [[package]]
 name = "string-interner"
@@ -140,7 +131,6 @@ checksum = "383196d1876517ee6f9f0864d1fc1070331b803335d3c6daaa04bbcccd823c08"
 dependencies = [
  "cfg-if",
  "hashbrown",
- "serde",
 ]
 
 [[package]]

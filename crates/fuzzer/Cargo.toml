@@ -8,6 +8,6 @@ edition = "2018"
 
 [dependencies]
 afl = "0.8.0"
+ast = { path = "../ast" }
 parser = { path = "../parser" }
 lexer = { path = "../lexer" }
-string-interner = "0.12.2"

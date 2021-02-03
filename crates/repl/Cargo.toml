@@ -10,4 +10,3 @@ edition = "2018"
 ast = { path = "../ast" }
 lexer = { path = "../lexer" }
 parser = { path = "../parser" }
-string-interner = "0.12.2"

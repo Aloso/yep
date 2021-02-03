@@ -1,7 +1,7 @@
 use ast::token::TokenKind;
+use ast::StringInterner;
 use lexer::Program;
 use parser::formatting::ToBeauty;
-use string_interner::StringInterner;
 
 
 const BLUE: &str = "\x1b[38;2;50;220;255m";

@@ -1,5 +1,5 @@
 use afl::{__fuzz, fuzz};
-use string_interner::StringInterner;
+use ast::StringInterner;
 
 fn main() {
     fuzz!(|data: &[u8]| {

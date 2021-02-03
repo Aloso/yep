@@ -1,9 +1,8 @@
-use string_interner::DefaultSymbol;
-
 use super::formatting::{Beauty, BeautyData, ToBeauty};
 use ast::expr::*;
 use ast::item::*;
 use ast::token::*;
+use ast::DefaultSymbol;
 
 macro_rules! beauty_impl {
     (struct $name:ident { $($field:ident),* $(,)? }) => {

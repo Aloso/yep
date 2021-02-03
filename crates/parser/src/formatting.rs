@@ -1,6 +1,5 @@
 use ast::token::{NumberLiteral, StringLiteral};
-use ast::Spanned;
-use string_interner::{DefaultSymbol, StringInterner};
+use ast::{DefaultSymbol, Spanned, StringInterner};
 
 #[derive(Debug, Clone)]
 pub struct Beauty {

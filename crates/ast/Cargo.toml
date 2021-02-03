@@ -7,5 +7,5 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-string-interner = "0.12.2"
+string-interner = { version = "0.12.2", default-features = false, features = ["backends", "std"] }
 thiserror = "1.0"

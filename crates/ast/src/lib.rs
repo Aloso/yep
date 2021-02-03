@@ -18,3 +18,5 @@ pub use text_range::TextRange;
 
 // TODO: Use something like smallvec or tinyvec instead
 pub type SpannedList<T> = Box<[Spanned<T>]>;
+
+pub use string_interner::{DefaultSymbol, StringInterner};
