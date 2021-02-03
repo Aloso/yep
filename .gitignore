@@ -1,2 +1,3 @@
 /target
-/crates/fuzzer/out/queue
+/crates/fuzzer/out
+/crates/fuzzer/target

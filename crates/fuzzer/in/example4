@@ -1,0 +1,1 @@
+class Foo[T](x T, y T = 0);
