@@ -4,7 +4,6 @@ use std::borrow::Cow;
 use ast::token::{NumberLiteral, TokenData};
 use ast::LexError;
 
-
 trait Int: Copy + 'static {
     fn zero() -> Self;
     fn mul(self, factor: u32) -> Result<Self>;
@@ -201,18 +200,15 @@ pub(super) fn parse_number(input: &str) -> TokenData {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
-    use crate::lexer;
-
     use anyhow::{bail, Result};
     use assert_matches::assert_matches;
     use ast::token::NumberLiteral::*;
     use ast::token::{NumberLiteral, TokenData};
 
     fn parse_number(text: &str) -> Result<NumberLiteral> {
-        let mut program = lexer::lex(text);
+        let mut program = crate::lex(text);
         program.no_eof();
         if program.token_len() != 1 {
             bail!("expected exactly 1 token, got {:#?}", program);

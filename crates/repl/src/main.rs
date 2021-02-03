@@ -1,8 +1,7 @@
 use ast::token::TokenKind;
+use lexer::Program;
+use parser::formatting::ToBeauty;
 use string_interner::StringInterner;
-use wamos_parser::lexer::{self, Program};
-use wamos_parser::parser;
-use wamos_parser::parser::formatting::ToBeauty;
 
 
 const BLUE: &str = "\x1b[38;2;50;220;255m";

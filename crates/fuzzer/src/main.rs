@@ -1,6 +1,5 @@
 use afl::{__fuzz, fuzz};
 use string_interner::StringInterner;
-use wamos_parser::{lexer, parser};
 
 fn main() {
     fuzz!(|data: &[u8]| {

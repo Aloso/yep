@@ -1,4 +1,4 @@
-pub(super) mod numbers;
+mod numbers;
 mod syntax;
 mod tokens;
 
@@ -28,11 +28,17 @@ pub struct Program<'a> {
 }
 
 impl<'a> Program<'a> {
-    pub fn token_len(&self) -> usize { self.tokens.len() }
+    pub fn token_len(&self) -> usize {
+        self.tokens.len()
+    }
 
-    pub fn tokens(&'a self) -> &'a [Spanned<Token<'a>>] { &self.tokens }
+    pub fn tokens(&'a self) -> &'a [Spanned<Token<'a>>] {
+        &self.tokens
+    }
 
-    pub fn text(&self) -> &str { self.text }
+    pub fn text(&self) -> &str {
+        self.text
+    }
 
     pub fn errors(&self) -> Vec<LexError> {
         let mut lex_errors = Vec::new();

@@ -8,5 +8,6 @@ edition = "2018"
 
 [dependencies]
 ast = { path = "../ast" }
-wamos-parser = { path = "../wamos-parser" }
+lexer = { path = "../lexer" }
+parser = { path = "../parser" }
 string-interner = "0.12.2"

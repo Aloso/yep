@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use ast::expr::Expr;
 use ast::item::Item;
 use ast::token::{Operator, Token, TokenData};
@@ -22,9 +24,7 @@ struct Lexer<'a, 'b> {
 }
 
 impl<'a, 'b> Lexer<'a, 'b> {
-    fn from_tokens(tokens: &'a [Spanned<Token<'b>>]) -> Self {
-        Self { tokens }
-    }
+    fn from_tokens(tokens: &'a [Spanned<Token<'b>>]) -> Self { Self { tokens } }
 
     /// Returns `Some(span)` and advances the lexer if the next token matches
     /// `elem`
@@ -57,13 +57,9 @@ impl<'a, 'b> Lexer<'a, 'b> {
     }
 
     /// Return the next token _without_ advancing the lexer
-    fn peek(&self) -> &Token {
-        &self.tokens[0].inner
-    }
+    fn peek(&self) -> &Token { &self.tokens[0].inner }
 
-    fn len(&self) -> usize {
-        self.tokens.len()
-    }
+    fn len(&self) -> usize { self.tokens.len() }
 
     fn finish(&mut self) -> Result<(), Error> {
         if self.tokens.is_empty()
@@ -136,7 +132,7 @@ trait Parse: Sized {
 #[cfg(test)]
 mod tests {
     fn parsed_equals(code: &str, out: &str) {
-        let lexed = crate::lexer::lex(code);
+        let lexed = lexer::lex(code);
         assert_eq!(lexed.errors(), vec![]);
         match super::parse(lexed.tokens()) {
             Ok(items) => {

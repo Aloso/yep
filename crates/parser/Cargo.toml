@@ -1,5 +1,5 @@
 [package]
-name = "wamos-parser"
+name = "parser"
 version = "0.1.0"
 authors = ["Ludwig Stecher <ludwig.stecher@gmx.de>"]
 edition = "2018"
@@ -7,12 +7,12 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-ast = { path = "../../crates/ast" }
+ast = { path = "../ast" }
 anyhow = "1.0"
-logos = "0.11.4"
 string-interner = "0.12"
 thiserror = "1.0"
 
 [dev-dependencies]
+lexer = { path = "../lexer" }
 assert_matches = "1.4"
 difference = "2.0"
