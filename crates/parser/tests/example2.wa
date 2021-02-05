@@ -1,0 +1,5 @@
+fun fib(n Int) Int {
+    {n < 2}
+        .if!(|| 1)
+        .else!(|| fib(n - 1) + fib(n - 2))
+}

@@ -5,19 +5,10 @@ mod tokens;
 use std::fmt;
 
 use ast::token::{Token, TokenData};
-use ast::{LexError, Spanned, StringInterner};
+use ast::{LexError, Spanned};
 
 pub fn lex(text: &str) -> Program<'_> {
-    let mut interner = StringInterner::new();
-    let tokens = tokens::lex(text, &mut interner);
-    Program { text, tokens }
-}
-
-pub fn lex_with_interner<'a>(
-    text: &'a str,
-    interner: &'a mut StringInterner,
-) -> Program<'a> {
-    let tokens = tokens::lex(text, interner);
+    let tokens = tokens::lex(text);
     Program { text, tokens }
 }
 
@@ -49,7 +40,7 @@ impl<'a> Program<'a> {
 
     pub fn with_lifeless_tokens(&'a self, tokens: &'a [Spanned<TokenData>]) -> Self {
         Program {
-            tokens: tokens.iter().map(|l| Token::new(l.inner, l.span)).collect(),
+            tokens: tokens.iter().map(|l| Token::new(l.inner.clone(), l.span)).collect(),
             text: self.text,
         }
     }
@@ -89,7 +80,7 @@ impl fmt::Debug for Program<'_> {
 }
 
 #[test]
-fn run_test_files() {
+fn run_lexer_tests() {
     use std::ffi::OsStr;
     use std::fs::{read_to_string, File};
     use std::io::Write;

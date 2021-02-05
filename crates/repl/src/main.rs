@@ -1,5 +1,4 @@
 use ast::token::TokenKind;
-use ast::StringInterner;
 use lexer::Program;
 use parser::formatting::ToBeauty;
 
@@ -29,15 +28,14 @@ fn main() {
         }
 
         print!("Lexed program:  ");
-        let mut interner = StringInterner::new();
-        let program = lexer::lex_with_interner(&text, &mut interner);
+        let program = lexer::lex(&text);
         print_program(&program);
         println!("\n");
 
         match parser::parse(program.tokens()) {
             Ok(parsed) => {
                 println!("Parsed output:");
-                println!("{}", parsed.to_beauty_string(&interner).trim_end());
+                println!("{}", parsed.to_beauty_string().trim_end());
                 println!("\n");
             }
             Err(error) => {

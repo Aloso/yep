@@ -2,7 +2,7 @@ use super::formatting::{Beauty, BeautyData, ToBeauty};
 use ast::expr::*;
 use ast::item::*;
 use ast::token::*;
-use ast::DefaultSymbol;
+use ast::TinyString;
 
 macro_rules! beauty_impl {
     (struct $name:ident { $($field:ident),* $(,)? }) => {
@@ -31,7 +31,9 @@ impl ToBeauty for NumberLiteral {
 }
 
 impl ToBeauty for StringLiteral {
-    fn to_beauty(&self) -> Beauty { Beauty { data: BeautyData::String(*self), num: 1 } }
+    fn to_beauty(&self) -> Beauty {
+        Beauty { data: BeautyData::String(self.clone()), num: 1 }
+    }
 }
 
 impl ToBeauty for DeclKind {
@@ -52,20 +54,22 @@ impl ToBeauty for ScOperator {
     }
 }
 
-impl ToBeauty for DefaultSymbol {
-    fn to_beauty(&self) -> Beauty { Beauty { data: BeautyData::Interned(*self), num: 1 } }
+impl ToBeauty for TinyString {
+    fn to_beauty(&self) -> Beauty {
+        Beauty { data: BeautyData::Name(self.clone()), num: 1 }
+    }
 }
 
 impl ToBeauty for Ident {
-    fn to_beauty(&self) -> Beauty { Beauty::kv("Ident", self.symbol().to_beauty()) }
+    fn to_beauty(&self) -> Beauty { Beauty::kv("Ident", self.inner().to_beauty()) }
 }
 
 impl ToBeauty for UpperIdent {
-    fn to_beauty(&self) -> Beauty { Beauty::kv("UpperIdent", self.symbol().to_beauty()) }
+    fn to_beauty(&self) -> Beauty { Beauty::kv("UpperIdent", self.inner().to_beauty()) }
 }
 
 impl ToBeauty for Operator {
-    fn to_beauty(&self) -> Beauty { Beauty::kv("Operator", self.symbol().to_beauty()) }
+    fn to_beauty(&self) -> Beauty { Beauty::kv("Operator", self.inner().to_beauty()) }
 }
 
 beauty_impl! {

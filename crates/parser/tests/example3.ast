@@ -1,0 +1,36 @@
+[
+    Enum(
+        Enum {
+            name: UpperIdent Option @ 5..11,
+            generics: [
+                GenericParam {
+                    name: UpperIdent T @ 12..13,
+                    bounds: [],
+                } @ 12..13,
+            ] @ 11..14,
+            variants: [
+                EnumVariant {
+                    name: Ident some @ 21..25,
+                    arguments: Some(
+                        [
+                            ClassField {
+                                name: Ident value @ 26..31,
+                                ty: Some(
+                                    NamedType {
+                                        name: UpperIdent T @ 32..33,
+                                        args: [] @ 0..0,
+                                    } @ 32..33,
+                                ),
+                                default: None,
+                            } @ 26..33,
+                        ] @ 25..34,
+                    ),
+                } @ 21..34,
+                EnumVariant {
+                    name: Ident none @ 40..44,
+                    arguments: None,
+                } @ 40..44,
+            ] @ 15..47,
+        },
+    ) @ 0..47,
+]

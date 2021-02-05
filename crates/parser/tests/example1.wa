@@ -1,0 +1,5 @@
+fun foo[T](x List[T], y Int) List[T] {
+    x = x.map(y) List[T];
+    assert(x.len != 0);
+    x
+}

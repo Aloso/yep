@@ -29,8 +29,8 @@ pub enum Expr {
 impl Expr {
     pub fn to_operator(&self) -> Option<Operator> {
         match self {
-            Expr::Invokable(i) => match *i.name {
-                Name::Operator(o) => Some(o),
+            Expr::Invokable(i) => match &*i.name {
+                Name::Operator(o) => Some(o.clone()),
                 _ => None,
             },
             _ => None,
@@ -83,7 +83,7 @@ pub struct Invokable {
     pub generics: Spanned<SpannedList<TypeArgument>>,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 pub enum Literal {
     NumberLit(NumberLiteral),
     StringLit(StringLiteral),

@@ -1,8 +1,7 @@
 mod error;
 mod keyword;
-#[macro_use]
-mod name;
 mod literal;
+mod name;
 mod punct;
 mod spanned;
 mod text_range;
@@ -19,4 +18,4 @@ pub use text_range::TextRange;
 // TODO: Use something like smallvec or tinyvec instead
 pub type SpannedList<T> = Box<[Spanned<T>]>;
 
-pub use string_interner::{DefaultSymbol, StringInterner};
+pub use tinystring::TinyString;

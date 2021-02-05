@@ -406,7 +406,7 @@ impl ExprPart {
             }
 
             ExprPart::Literal(l) => {
-                Err(Error::ExpectedGot3("operator", Expr::Literal(*l)))
+                Err(Error::ExpectedGot3("operator", Expr::Literal(l.clone())))
             }
         }
     }
@@ -417,11 +417,12 @@ impl ExprPart {
         rhs: Spanned<Expr>,
     ) -> Result<Spanned<Expr>, Error> {
         let span = lhs.span.merge(rhs.span);
-        let data = match self {
-            ExprPart::Invokable(i) => match *i.name {
+        let data = match &self {
+            ExprPart::Invokable(i) => match &*i.name {
                 Name::Operator(operator) => {
                     validate_operand(&lhs.inner)?;
                     validate_operand(&rhs.inner)?;
+                    let operator = operator.clone();
                     Expr::Operation(Operation {
                         operator,
                         lhs: Box::new(lhs),

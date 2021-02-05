@@ -209,8 +209,8 @@ impl Validate for Operation {
     type State = ();
 
     fn validate(&self, _: ()) -> Result<(), ValidationError> {
-        ensure_no_operation_except(&self.lhs.inner, self.operator)?;
-        ensure_no_operation_except(&self.rhs.inner, self.operator)?;
+        ensure_no_operation_except(&self.lhs.inner, &self.operator)?;
+        ensure_no_operation_except(&self.rhs.inner, &self.operator)?;
         self.lhs.validate(ExprPlaceType::Other)?;
         self.rhs.validate(ExprPlaceType::Other)?;
         Ok(())
@@ -219,10 +219,10 @@ impl Validate for Operation {
 
 fn ensure_no_operation_except(
     expr: &Expr,
-    except: Operator,
+    except: &Operator,
 ) -> Result<(), ValidationError> {
     match expr {
-        Expr::Operation(o) if o.operator != except => {
+        Expr::Operation(o) if &o.operator != except => {
             return Err(ValidationError::OperationsRequireBlock);
         }
         _ => {}

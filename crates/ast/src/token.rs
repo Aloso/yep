@@ -7,13 +7,13 @@ pub use crate::name::{Ident, Operator, UpperIdent};
 pub use crate::punct::Punctuation;
 use crate::{LexError, Spanned, TextRange};
 
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 pub struct Token<'a> {
     pub data: TokenData,
     lt: PhantomData<&'a str>,
 }
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TokenData {
     Punct(Punctuation),
     StringLit(StringLiteral),
@@ -53,7 +53,7 @@ impl<'a> Token<'a> {
         Spanned::new(Self { data, lt: PhantomData }, span.into())
     }
 
-    pub fn data(&self) -> TokenData { self.data }
+    pub fn data(&self) -> TokenData { self.data.clone() }
 
     pub fn kind(&self) -> TokenKind {
         match self.data {

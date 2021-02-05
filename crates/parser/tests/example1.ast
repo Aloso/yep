@@ -1,0 +1,163 @@
+[
+    Function(
+        Function {
+            name: Ident foo @ 4..7,
+            generics: [
+                GenericParam {
+                    name: UpperIdent T @ 8..9,
+                    bounds: [],
+                } @ 8..9,
+            ] @ 7..10,
+            args: [
+                FunArgument {
+                    name: Ident x,
+                    ty: Some(
+                        NamedType {
+                            name: UpperIdent List @ 13..17,
+                            args: [
+                                Type(
+                                    NamedType {
+                                        name: UpperIdent T @ 18..19,
+                                        args: [] @ 0..0,
+                                    },
+                                ) @ 18..19,
+                            ] @ 17..20,
+                        } @ 13..20,
+                    ),
+                    default: None,
+                } @ 11..20,
+                FunArgument {
+                    name: Ident y,
+                    ty: Some(
+                        NamedType {
+                            name: UpperIdent Int @ 24..27,
+                            args: [] @ 0..0,
+                        } @ 24..27,
+                    ),
+                    default: None,
+                } @ 22..27,
+            ] @ 10..28,
+            return_ty: Some(
+                NamedType {
+                    name: UpperIdent List @ 29..33,
+                    args: [
+                        Type(
+                            NamedType {
+                                name: UpperIdent T @ 34..35,
+                                args: [] @ 0..0,
+                            },
+                        ) @ 34..35,
+                    ] @ 33..36,
+                } @ 29..36,
+            ),
+            body: Some(
+                Block {
+                    exprs: [
+                        Assignment(
+                            Assignment {
+                                lhs: Invokable(
+                                    Invokable {
+                                        name: Ident x @ 43..44,
+                                        generics: [] @ 0..0,
+                                    },
+                                ) @ 43..44,
+                                rhs: TypeAscription(
+                                    TypeAscription {
+                                        expr: ParenCall(
+                                            ParenCall {
+                                                receiver: MemberCall(
+                                                    MemberCall {
+                                                        receiver: Invokable(
+                                                            Invokable {
+                                                                name: Ident x @ 47..48,
+                                                                generics: [] @ 0..0,
+                                                            },
+                                                        ) @ 47..48,
+                                                        member: Invokable {
+                                                            name: Ident map @ 49..52,
+                                                            generics: [] @ 0..0,
+                                                        },
+                                                    },
+                                                ) @ 47..52,
+                                                args: Some(
+                                                    [
+                                                        FunCallArgument {
+                                                            name: None,
+                                                            expr: Invokable(
+                                                                Invokable {
+                                                                    name: Ident y @ 53..54,
+                                                                    generics: [] @ 0..0,
+                                                                },
+                                                            ) @ 53..54,
+                                                        } @ 53..54,
+                                                    ],
+                                                ),
+                                            },
+                                        ) @ 47..55,
+                                        ty: NamedType {
+                                            name: UpperIdent List @ 56..60,
+                                            args: [
+                                                Type(
+                                                    NamedType {
+                                                        name: UpperIdent T @ 61..62,
+                                                        args: [] @ 0..0,
+                                                    },
+                                                ) @ 61..62,
+                                            ] @ 60..63,
+                                        },
+                                    },
+                                ) @ 47..63,
+                            },
+                        ) @ 43..63,
+                        ParenCall(
+                            ParenCall {
+                                receiver: Invokable(
+                                    Invokable {
+                                        name: Ident assert @ 69..75,
+                                        generics: [] @ 0..0,
+                                    },
+                                ) @ 69..75,
+                                args: Some(
+                                    [
+                                        FunCallArgument {
+                                            name: None,
+                                            expr: Operation(
+                                                Operation {
+                                                    operator: Operator !=,
+                                                    lhs: MemberCall(
+                                                        MemberCall {
+                                                            receiver: Invokable(
+                                                                Invokable {
+                                                                    name: Ident x @ 76..77,
+                                                                    generics: [] @ 0..0,
+                                                                },
+                                                            ) @ 76..77,
+                                                            member: Invokable {
+                                                                name: Ident len @ 78..81,
+                                                                generics: [] @ 0..0,
+                                                            },
+                                                        },
+                                                    ) @ 76..81,
+                                                    rhs: Literal(
+                                                        Int(0),
+                                                    ) @ 85..86,
+                                                },
+                                            ) @ 76..86,
+                                        } @ 76..86,
+                                    ],
+                                ),
+                            },
+                        ) @ 69..87,
+                        Invokable(
+                            Invokable {
+                                name: Ident x @ 93..94,
+                                generics: [] @ 0..0,
+                            },
+                        ) @ 93..94,
+                    ],
+                    ends_with_semicolon: false,
+                } @ 37..96,
+            ),
+        },
+    ) @ 0..96,
+]

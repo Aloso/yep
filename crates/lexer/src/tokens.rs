@@ -1,14 +1,11 @@
 use ast::token::{Ident, Operator, StringLiteral, Token, TokenData, UpperIdent};
-use ast::{LexError, Spanned, StringInterner, TextRange};
+use ast::{LexError, Spanned, TextRange};
 use logos::Lexer;
 
 use super::numbers;
 use super::syntax::{parse_keyword, IToken};
 
-pub(super) fn lex<'a>(
-    text: &'a str,
-    interner: &mut StringInterner,
-) -> Vec<Spanned<Token<'a>>> {
+pub(super) fn lex<'a>(text: &'a str) -> Vec<Spanned<Token<'a>>> {
     let mut was_word = false;
     let mut v: Vec<Spanned<Token<'a>>> = Vec::new();
 
@@ -20,17 +17,17 @@ pub(super) fn lex<'a>(
                 if word.starts_with(|c: char| c.is_ascii_lowercase()) {
                     parse_keyword(word)
                         .map(TokenData::Keyword)
-                        .unwrap_or_else(|| TokenData::Ident(Ident::new(word, interner)))
+                        .unwrap_or_else(|| TokenData::Ident(Ident::new(word)))
                 } else if word.starts_with(|c: char| c.is_ascii_uppercase()) {
-                    TokenData::UpperIdent(UpperIdent::new(word, interner))
+                    TokenData::UpperIdent(UpperIdent::new(word))
                 } else if word.contains(|c: char| c.is_ascii_digit()) {
                     TokenData::Error(LexError::InvalidNum)
                 } else {
-                    TokenData::Operator(Operator::new(word, interner))
+                    TokenData::Operator(Operator::new(word))
                 }
             }
             IToken::NumberLit(input) => numbers::parse_number(input),
-            IToken::StringLit(s) => TokenData::StringLit(StringLiteral::new(s, interner)),
+            IToken::StringLit(s) => TokenData::StringLit(StringLiteral::new(s)),
             IToken::Punct(p) => TokenData::Punct(p),
             IToken::Error => TokenData::Error(LexError::Unexpected),
             IToken::WS => TokenData::Error(LexError::WS),

@@ -1,0 +1,180 @@
+[
+    Class(
+        Class {
+            name: UpperIdent IpAddrV4 @ 6..14,
+            generics: [] @ 0..0,
+            fields: [
+                ClassField {
+                    name: Ident a1 @ 15..17,
+                    ty: Some(
+                        NamedType {
+                            name: UpperIdent U8 @ 18..20,
+                            args: [] @ 0..0,
+                        } @ 18..20,
+                    ),
+                    default: None,
+                } @ 15..20,
+                ClassField {
+                    name: Ident a2 @ 22..24,
+                    ty: Some(
+                        NamedType {
+                            name: UpperIdent U8 @ 25..27,
+                            args: [] @ 0..0,
+                        } @ 25..27,
+                    ),
+                    default: None,
+                } @ 22..27,
+                ClassField {
+                    name: Ident a3 @ 29..31,
+                    ty: Some(
+                        NamedType {
+                            name: UpperIdent U8 @ 32..34,
+                            args: [] @ 0..0,
+                        } @ 32..34,
+                    ),
+                    default: None,
+                } @ 29..34,
+                ClassField {
+                    name: Ident a4 @ 36..38,
+                    ty: Some(
+                        NamedType {
+                            name: UpperIdent U8 @ 39..41,
+                            args: [] @ 0..0,
+                        } @ 39..41,
+                    ),
+                    default: None,
+                } @ 36..41,
+            ] @ 14..42,
+        },
+    ) @ 0..43,
+    Class(
+        Class {
+            name: UpperIdent IpAddrV6 @ 51..59,
+            generics: [] @ 0..0,
+            fields: [
+                ClassField {
+                    name: Ident a1 @ 60..62,
+                    ty: Some(
+                        NamedType {
+                            name: UpperIdent U16 @ 63..66,
+                            args: [] @ 0..0,
+                        } @ 63..66,
+                    ),
+                    default: None,
+                } @ 60..66,
+                ClassField {
+                    name: Ident a2 @ 68..70,
+                    ty: Some(
+                        NamedType {
+                            name: UpperIdent U16 @ 71..74,
+                            args: [] @ 0..0,
+                        } @ 71..74,
+                    ),
+                    default: None,
+                } @ 68..74,
+                ClassField {
+                    name: Ident a3 @ 76..78,
+                    ty: Some(
+                        NamedType {
+                            name: UpperIdent U16 @ 79..82,
+                            args: [] @ 0..0,
+                        } @ 79..82,
+                    ),
+                    default: None,
+                } @ 76..82,
+                ClassField {
+                    name: Ident a4 @ 84..86,
+                    ty: Some(
+                        NamedType {
+                            name: UpperIdent U16 @ 87..90,
+                            args: [] @ 0..0,
+                        } @ 87..90,
+                    ),
+                    default: None,
+                } @ 84..90,
+                ClassField {
+                    name: Ident a5 @ 92..94,
+                    ty: Some(
+                        NamedType {
+                            name: UpperIdent U16 @ 95..98,
+                            args: [] @ 0..0,
+                        } @ 95..98,
+                    ),
+                    default: None,
+                } @ 92..98,
+                ClassField {
+                    name: Ident a6 @ 100..102,
+                    ty: Some(
+                        NamedType {
+                            name: UpperIdent U16 @ 103..106,
+                            args: [] @ 0..0,
+                        } @ 103..106,
+                    ),
+                    default: None,
+                } @ 100..106,
+                ClassField {
+                    name: Ident a7 @ 108..110,
+                    ty: Some(
+                        NamedType {
+                            name: UpperIdent U16 @ 111..114,
+                            args: [] @ 0..0,
+                        } @ 111..114,
+                    ),
+                    default: None,
+                } @ 108..114,
+                ClassField {
+                    name: Ident a8 @ 116..118,
+                    ty: Some(
+                        NamedType {
+                            name: UpperIdent U16 @ 119..122,
+                            args: [] @ 0..0,
+                        } @ 119..122,
+                    ),
+                    default: None,
+                } @ 116..122,
+            ] @ 59..123,
+        },
+    ) @ 45..124,
+    Enum(
+        Enum {
+            name: UpperIdent IpAddr @ 131..137,
+            generics: [] @ 0..0,
+            variants: [
+                EnumVariant {
+                    name: Ident v4 @ 144..146,
+                    arguments: Some(
+                        [
+                            ClassField {
+                                name: Ident addr @ 147..151,
+                                ty: Some(
+                                    NamedType {
+                                        name: UpperIdent IpAddrV4 @ 152..160,
+                                        args: [] @ 0..0,
+                                    } @ 152..160,
+                                ),
+                                default: None,
+                            } @ 147..160,
+                        ] @ 146..161,
+                    ),
+                } @ 144..161,
+                EnumVariant {
+                    name: Ident v6 @ 167..169,
+                    arguments: Some(
+                        [
+                            ClassField {
+                                name: Ident addr @ 170..174,
+                                ty: Some(
+                                    NamedType {
+                                        name: UpperIdent IpAddrV6 @ 175..183,
+                                        args: [] @ 0..0,
+                                    } @ 175..183,
+                                ),
+                                default: None,
+                            } @ 170..183,
+                        ] @ 169..184,
+                    ),
+                } @ 167..184,
+            ] @ 138..187,
+        },
+    ) @ 126..187,
+]

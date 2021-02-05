@@ -1,6 +1,6 @@
 use std::fmt;
 
-use string_interner::{DefaultSymbol, StringInterner};
+use tinystring::TinyString;
 
 /// Supported literals are
 ///
@@ -42,24 +42,26 @@ pub enum NumberLiteral {
     Float(f64),
 }
 
-#[derive(Copy, Clone, Eq, PartialEq, Hash)]
-pub struct StringLiteral(DefaultSymbol);
+#[derive(Clone, Eq, PartialEq, Hash)]
+pub struct StringLiteral(TinyString);
 
 
 impl StringLiteral {
-    pub fn new(string: &str, interner: &mut StringInterner) -> Self {
-        Self(interner.get_or_intern(string))
-    }
+    pub fn new(string: impl Into<TinyString>) -> Self { Self(string.into()) }
 
-    pub fn lookup<'a>(&self, interner: &'a StringInterner) -> Option<&'a str> {
-        interner.resolve(self.0)
-    }
+    pub fn get(&self) -> &str { &*self.0 }
 
-    pub fn symbol(&self) -> DefaultSymbol { self.0 }
+    pub fn inner(&self) -> TinyString { self.0.clone() }
+}
+
+impl fmt::Display for StringLiteral {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Display::fmt(&self.0, f)
+    }
 }
 
 impl fmt::Debug for StringLiteral {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "StringLit #{}", get_value!(self.0))
+        write!(f, "StringLiteral {:?}", &self.0)
     }
 }

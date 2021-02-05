@@ -1,0 +1,8 @@
+class IpAddrV4(a1 U8, a2 U8, a3 U8, a4 U8);
+
+class IpAddrV6(a1 U16, a2 U16, a3 U16, a4 U16, a5 U16, a6 U16, a7 U16, a8 U16);
+
+enum IpAddr {
+    v4(addr IpAddrV4),
+    v6(addr IpAddrV6),
+}

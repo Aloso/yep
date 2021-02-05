@@ -1,0 +1,172 @@
+[
+    Function(
+        Function {
+            name: Ident fib @ 4..7,
+            generics: [] @ 0..0,
+            args: [
+                FunArgument {
+                    name: Ident n,
+                    ty: Some(
+                        NamedType {
+                            name: UpperIdent Int @ 10..13,
+                            args: [] @ 0..0,
+                        } @ 10..13,
+                    ),
+                    default: None,
+                } @ 8..13,
+            ] @ 7..14,
+            return_ty: Some(
+                NamedType {
+                    name: UpperIdent Int @ 15..18,
+                    args: [] @ 0..0,
+                } @ 15..18,
+            ),
+            body: Some(
+                Block {
+                    exprs: [
+                        ParenCall(
+                            ParenCall {
+                                receiver: MemberCall(
+                                    MemberCall {
+                                        receiver: ParenCall(
+                                            ParenCall {
+                                                receiver: MemberCall(
+                                                    MemberCall {
+                                                        receiver: Block(
+                                                            Block {
+                                                                exprs: [
+                                                                    Operation(
+                                                                        Operation {
+                                                                            operator: Operator <,
+                                                                            lhs: Invokable(
+                                                                                Invokable {
+                                                                                    name: Ident n @ 26..27,
+                                                                                    generics: [] @ 0..0,
+                                                                                },
+                                                                            ) @ 26..27,
+                                                                            rhs: Literal(
+                                                                                Int(2),
+                                                                            ) @ 30..31,
+                                                                        },
+                                                                    ) @ 26..31,
+                                                                ],
+                                                                ends_with_semicolon: false,
+                                                            },
+                                                        ) @ 25..32,
+                                                        member: Invokable {
+                                                            name: Ident if! @ 42..45,
+                                                            generics: [] @ 0..0,
+                                                        },
+                                                    },
+                                                ) @ 25..45,
+                                                args: Some(
+                                                    [
+                                                        FunCallArgument {
+                                                            name: None,
+                                                            expr: Lambda(
+                                                                Lambda {
+                                                                    args: [] @ 46..48,
+                                                                    body: Literal(
+                                                                        Int(1),
+                                                                    ) @ 49..50,
+                                                                },
+                                                            ) @ 46..50,
+                                                        } @ 46..50,
+                                                    ],
+                                                ),
+                                            },
+                                        ) @ 25..51,
+                                        member: Invokable {
+                                            name: Ident else! @ 61..66,
+                                            generics: [] @ 0..0,
+                                        },
+                                    },
+                                ) @ 25..66,
+                                args: Some(
+                                    [
+                                        FunCallArgument {
+                                            name: None,
+                                            expr: Lambda(
+                                                Lambda {
+                                                    args: [] @ 67..69,
+                                                    body: Operation(
+                                                        Operation {
+                                                            operator: Operator +,
+                                                            lhs: ParenCall(
+                                                                ParenCall {
+                                                                    receiver: Invokable(
+                                                                        Invokable {
+                                                                            name: Ident fib @ 70..73,
+                                                                            generics: [] @ 0..0,
+                                                                        },
+                                                                    ) @ 70..73,
+                                                                    args: Some(
+                                                                        [
+                                                                            FunCallArgument {
+                                                                                name: None,
+                                                                                expr: Operation(
+                                                                                    Operation {
+                                                                                        operator: Operator -,
+                                                                                        lhs: Invokable(
+                                                                                            Invokable {
+                                                                                                name: Ident n @ 74..75,
+                                                                                                generics: [] @ 0..0,
+                                                                                            },
+                                                                                        ) @ 74..75,
+                                                                                        rhs: Literal(
+                                                                                            Int(1),
+                                                                                        ) @ 78..79,
+                                                                                    },
+                                                                                ) @ 74..79,
+                                                                            } @ 74..79,
+                                                                        ],
+                                                                    ),
+                                                                },
+                                                            ) @ 70..80,
+                                                            rhs: ParenCall(
+                                                                ParenCall {
+                                                                    receiver: Invokable(
+                                                                        Invokable {
+                                                                            name: Ident fib @ 83..86,
+                                                                            generics: [] @ 0..0,
+                                                                        },
+                                                                    ) @ 83..86,
+                                                                    args: Some(
+                                                                        [
+                                                                            FunCallArgument {
+                                                                                name: None,
+                                                                                expr: Operation(
+                                                                                    Operation {
+                                                                                        operator: Operator -,
+                                                                                        lhs: Invokable(
+                                                                                            Invokable {
+                                                                                                name: Ident n @ 87..88,
+                                                                                                generics: [] @ 0..0,
+                                                                                            },
+                                                                                        ) @ 87..88,
+                                                                                        rhs: Literal(
+                                                                                            Int(2),
+                                                                                        ) @ 91..92,
+                                                                                    },
+                                                                                ) @ 87..92,
+                                                                            } @ 87..92,
+                                                                        ],
+                                                                    ),
+                                                                },
+                                                            ) @ 83..93,
+                                                        },
+                                                    ) @ 70..93,
+                                                },
+                                            ) @ 67..93,
+                                        } @ 67..93,
+                                    ],
+                                ),
+                            },
+                        ) @ 25..94,
+                    ],
+                    ends_with_semicolon: false,
+                } @ 19..96,
+            ),
+        },
+    ) @ 0..96,
+]

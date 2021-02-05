@@ -1,3 +1,5 @@
+use std::fmt;
+
 use crate::expr::{Block, Expr};
 use crate::name::{Ident, Operator};
 use crate::token::UpperIdent;
@@ -31,11 +33,21 @@ pub struct Function {
     pub body: Option<Spanned<Block>>,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone)]
 pub enum Name {
     Operator(Operator),
     Ident(Ident),
     Type(UpperIdent),
+}
+
+impl fmt::Debug for Name {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Name::Operator(o) => fmt::Debug::fmt(o, f),
+            Name::Ident(o) => fmt::Debug::fmt(o, f),
+            Name::Type(o) => fmt::Debug::fmt(o, f),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
