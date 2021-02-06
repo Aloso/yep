@@ -1,0 +1,68 @@
+[
+    Impl(
+        Impl {
+            generics: [] @ 0..0,
+            trait: None,
+            ty: NamedType {
+                name: UpperIdent Foo @ 5..8,
+                args: [] @ 0..0,
+            } @ 5..8,
+            items: [] @ 9..11,
+        },
+    ) @ 0..11,
+    Impl(
+        Impl {
+            generics: [
+                GenericParam {
+                    name: UpperIdent T @ 18..19,
+                    bounds: [],
+                } @ 18..19,
+            ] @ 17..20,
+            trait: Some(
+                NamedType {
+                    name: UpperIdent Bar @ 21..24,
+                    args: [
+                        Type(
+                            NamedType {
+                                name: UpperIdent T @ 25..26,
+                                args: [] @ 0..0,
+                            },
+                        ) @ 25..26,
+                    ] @ 24..27,
+                } @ 21..27,
+            ),
+            ty: NamedType {
+                name: UpperIdent Foo @ 32..35,
+                args: [
+                    Type(
+                        NamedType {
+                            name: UpperIdent T @ 36..37,
+                            args: [] @ 0..0,
+                        },
+                    ) @ 36..37,
+                ] @ 35..38,
+            } @ 32..38,
+            items: [
+                Function(
+                    Function {
+                        name: Ident bar @ 49..52,
+                        generics: [] @ 0..0,
+                        args: [] @ 52..54,
+                        return_ty: Some(
+                            NamedType {
+                                name: UpperIdent Unit @ 55..59,
+                                args: [] @ 0..0,
+                            } @ 55..59,
+                        ),
+                        body: Some(
+                            Block {
+                                exprs: [],
+                                ends_with_semicolon: false,
+                            } @ 60..62,
+                        ),
+                    },
+                ) @ 45..62,
+            ] @ 39..64,
+        },
+    ) @ 13..64,
+]

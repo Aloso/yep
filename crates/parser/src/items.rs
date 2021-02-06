@@ -9,10 +9,11 @@ use super::{LexerMut, Parse, ParseResult};
 
 impl Parse for Item {
     fn parse(lexer: LexerMut) -> ParseResult<Self> {
-        or3(
+        or4(
             map(Function::parse, Item::Function),
             map(Class::parse, Item::Class),
             map(Enum::parse, Item::Enum),
+            map(Impl::parse, Item::Impl),
         )(lexer)
     }
 }
@@ -165,6 +166,35 @@ impl Parse for EnumVariant {
             true,
         )(lexer)?;
         Ok(Some(name.span.merge_if(&arguments).embed(EnumVariant { name, arguments })))
+    }
+}
+
+impl Parse for Impl {
+    fn parse(lexer: LexerMut) -> ParseResult<Self> {
+        let span1 = uoret!(lexer.eat(Keyword::Impl));
+        let generics = parse_generics(lexer)?.unwrap_or_default();
+        let r#trait = NamedType::parse_expect(lexer, "type or trait")?;
+        let (r#trait, r#type) = if lexer.eat(Keyword::For).is_some() {
+            let r#type = NamedType::parse_expect(lexer, "type")?;
+            (Some(r#trait), r#type)
+        } else {
+            (None, r#trait)
+        };
+
+        let mut items = Vec::new();
+        let items_span1 = lexer.expect(Punctuation::OpenBrace)?;
+        while let Some(item) = Item::parse(lexer)? {
+            items.push(item);
+        }
+        let items_span2 = lexer.expect(Punctuation::CloseBrace)?;
+        let items = items_span1.merge(items_span2).embed(items.into_boxed_slice());
+
+        Ok(Some(span1.merge(items.span).embed(Impl {
+            generics,
+            r#trait,
+            ty: r#type,
+            items,
+        })))
     }
 }
 

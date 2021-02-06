@@ -10,6 +10,26 @@ pub enum Item {
     Function(Function),
     Class(Class),
     Enum(Enum),
+    Impl(Impl),
+}
+
+#[derive(Debug, Copy, Clone)]
+pub enum ItemKind {
+    Function,
+    Class,
+    Enum,
+    Impl,
+}
+
+impl Item {
+    pub fn kind(&self) -> ItemKind {
+        match self {
+            Item::Function(_) => ItemKind::Function,
+            Item::Class(_) => ItemKind::Class,
+            Item::Enum(_) => ItemKind::Enum,
+            Item::Impl(_) => ItemKind::Impl,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -93,4 +113,12 @@ pub struct Enum {
 pub struct EnumVariant {
     pub name: Spanned<Ident>,
     pub arguments: Option<Spanned<SpannedList<ClassField>>>,
+}
+
+#[derive(Debug, Clone)]
+pub struct Impl {
+    pub generics: Spanned<SpannedList<GenericParam>>,
+    pub r#trait: Option<Spanned<NamedType>>,
+    pub ty: Spanned<NamedType>,
+    pub items: Spanned<SpannedList<Item>>,
 }

@@ -24,11 +24,11 @@ impl<'a> Program<'a> {
 
     pub fn text(&self) -> &str { self.text }
 
-    pub fn errors(&self) -> Vec<LexError> {
+    pub fn errors(&self) -> Vec<Spanned<LexError>> {
         let mut lex_errors = Vec::new();
         for t in self.tokens() {
             if let Some(e) = t.lex_error() {
-                lex_errors.push(e);
+                lex_errors.push(t.span.embed(e));
             }
         }
         lex_errors

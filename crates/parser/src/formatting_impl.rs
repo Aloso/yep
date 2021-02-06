@@ -73,7 +73,7 @@ impl ToBeauty for Operator {
 }
 
 beauty_impl! {
-    enum Item { Function, Class, Enum }
+    enum Item { Function, Class, Enum, Impl }
 }
 
 beauty_impl! {
@@ -94,6 +94,10 @@ beauty_impl! {
 
 beauty_impl! {
     struct EnumVariant { name, arguments }
+}
+
+beauty_impl! {
+    struct Impl { generics, r#trait, ty, items }
 }
 
 beauty_impl! {

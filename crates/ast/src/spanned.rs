@@ -3,7 +3,7 @@ use std::ops::Deref;
 
 use crate::TextRange;
 
-#[derive(Copy, Clone, Default)]
+#[derive(Copy, Clone, Default, PartialEq, Eq)]
 pub struct Spanned<T> {
     pub inner: T,
     pub span: TextRange,

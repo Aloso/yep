@@ -1,5 +1,5 @@
 use ast::expr::*;
-use ast::item::{Class, Enum, Function, Item, Name, NamedType};
+use ast::item::{Class, Enum, Function, Impl, Item, ItemKind, Name, NamedType};
 use ast::token::Operator;
 use ast::Spanned;
 
@@ -43,6 +43,14 @@ pub enum ValidationError {
 
     #[error("Argument doesn't specify its type")]
     ExpectedArgType,
+
+    #[error("impl blocks can't contain {}", match .0 {
+        ItemKind::Class => "classes",
+        ItemKind::Enum => "enums",
+        ItemKind::Impl => "impl blocks",
+        ItemKind::Function => "functions",
+    })]
+    ForbiddenItemInImpl(ItemKind),
 }
 
 pub(super) trait Validate {
@@ -401,6 +409,20 @@ impl Validate for Enum {
     fn validate(&self, _: ()) -> Result<(), ValidationError> { Ok(()) }
 }
 
+impl Validate for Impl {
+    type State = ();
+
+    fn validate(&self, _: ()) -> Result<(), ValidationError> {
+        for item in self.items.iter() {
+            match item.inner.kind() {
+                ItemKind::Function => {}
+                k => return Err(ValidationError::ForbiddenItemInImpl(k)),
+            }
+        }
+        self.items.validate(())
+    }
+}
+
 
 impl Validate for Item {
     type State = ();
@@ -410,6 +432,7 @@ impl Validate for Item {
             Item::Function(f) => f.validate(FunctionType::Complete)?,
             Item::Class(c) => c.validate(())?,
             Item::Enum(e) => e.validate(())?,
+            Item::Impl(i) => i.validate(())?,
         }
         Ok(())
     }

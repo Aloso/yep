@@ -1,0 +1,5 @@
+impl Foo {}
+
+impl[T] Bar[T] for Foo[T] {
+    fun bar() Unit {}
+}
