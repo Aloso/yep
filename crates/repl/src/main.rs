@@ -14,7 +14,7 @@ const BOLD: &str = "\x1b[1m";
 const RESET: &str = "\x1b[0m";
 
 fn main() {
-    println!("wamos 0.1 REPL. Press Enter twice to validate. Press Ctrl+C to exit.\n");
+    println!("Yep 0.1 REPL. Press Enter twice to validate. Press Ctrl+C to exit.\n");
 
     let stdin = std::io::stdin();
     loop {
