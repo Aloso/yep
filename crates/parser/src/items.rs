@@ -9,11 +9,12 @@ use super::{LexerMut, Parse, ParseResult};
 
 impl Parse for Item {
     fn parse(lexer: LexerMut) -> ParseResult<Self> {
-        or4(
+        or5(
             map(Function::parse, Item::Function),
             map(Class::parse, Item::Class),
             map(Enum::parse, Item::Enum),
             map(Impl::parse, Item::Impl),
+            map(Use::parse, Item::Use),
         )(lexer)
     }
 }
@@ -195,6 +196,31 @@ impl Parse for Impl {
             ty: r#type,
             items,
         })))
+    }
+}
+
+impl Parse for Use {
+    fn parse(lexer: LexerMut) -> ParseResult<Self> {
+        let span1 = uoret!(lexer.eat(Keyword::Use));
+
+        let mut names = vec![Name::parse_expect(lexer, "path")?];
+        let mut wildcard = None;
+
+        while lexer.eat(Punctuation::Dot).is_some() {
+            if let Some(span) = lexer.eat(Punctuation::Underscore) {
+                wildcard = Some(span.embed(()));
+                break;
+            } else {
+                names.push(Name::parse_expect(lexer, "path segment")?);
+            }
+        }
+        let fst_segment = names[0].span;
+        let lst_segment = names[names.len() - 1].span;
+        let path = fst_segment.merge(lst_segment).embed(names.into_boxed_slice());
+
+        let span2 = lexer.expect(Punctuation::Semicolon)?;
+
+        Ok(Some(span1.merge(span2).embed(Use { path, wildcard })))
     }
 }
 

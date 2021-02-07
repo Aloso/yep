@@ -1,0 +1,2 @@
+use foo.bar.Baz;
+use foo.bar.baz._;

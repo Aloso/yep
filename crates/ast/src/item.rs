@@ -11,6 +11,7 @@ pub enum Item {
     Class(Class),
     Enum(Enum),
     Impl(Impl),
+    Use(Use),
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -19,6 +20,7 @@ pub enum ItemKind {
     Class,
     Enum,
     Impl,
+    Use,
 }
 
 impl Item {
@@ -28,6 +30,7 @@ impl Item {
             Item::Class(_) => ItemKind::Class,
             Item::Enum(_) => ItemKind::Enum,
             Item::Impl(_) => ItemKind::Impl,
+            Item::Use(_) => ItemKind::Use,
         }
     }
 }
@@ -121,4 +124,10 @@ pub struct Impl {
     pub r#trait: Option<Spanned<NamedType>>,
     pub ty: Spanned<NamedType>,
     pub items: Spanned<SpannedList<Item>>,
+}
+
+#[derive(Debug, Clone)]
+pub struct Use {
+    pub path: Spanned<SpannedList<Name>>,
+    pub wildcard: Option<Spanned<()>>,
 }

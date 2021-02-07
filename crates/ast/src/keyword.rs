@@ -6,6 +6,7 @@ pub enum Keyword {
     Class,
     Enum,
     Impl,
+    Use,
 
     // Expressions
     Let,

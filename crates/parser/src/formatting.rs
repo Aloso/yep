@@ -120,6 +120,10 @@ impl<'a, T: ToBeauty + ?Sized> From<&'a T> for Beauty {
     fn from(f: &T) -> Self { f.to_beauty() }
 }
 
+impl ToBeauty for () {
+    fn to_beauty(&self) -> Beauty { Beauty { data: BeautyData::Str("()"), num: 1 } }
+}
+
 impl<T: ToBeauty> ToBeauty for Spanned<T> {
     fn to_beauty(&self) -> Beauty { self.inner.to_beauty() }
 }

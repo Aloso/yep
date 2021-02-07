@@ -81,6 +81,16 @@ pub(super) fn or4<T>(
     or2(or2(f1, f2), or2(f3, f4))
 }
 
+pub(super) fn or5<T>(
+    f1: impl FnOnce(LexerMut) -> ParseResult<T>,
+    f2: impl FnOnce(LexerMut) -> ParseResult<T>,
+    f3: impl FnOnce(LexerMut) -> ParseResult<T>,
+    f4: impl FnOnce(LexerMut) -> ParseResult<T>,
+    f5: impl FnOnce(LexerMut) -> ParseResult<T>,
+) -> impl FnOnce(LexerMut) -> ParseResult<T> {
+    or2(or2(f1, f2), or3(f3, f4, f5))
+}
+
 pub(super) fn or6<T>(
     f1: impl FnOnce(LexerMut) -> ParseResult<T>,
     f2: impl FnOnce(LexerMut) -> ParseResult<T>,

@@ -50,6 +50,7 @@ pub(super) fn parse_keyword(s: &str) -> Option<Keyword> {
         "case" => Keyword::Case,
         "class" => Keyword::Class,
         "enum" => Keyword::Enum,
+        "use" => Keyword::Use,
         "for" => Keyword::For,
         "fun" => Keyword::Fun,
         "impl" => Keyword::Impl,

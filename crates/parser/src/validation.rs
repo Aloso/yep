@@ -1,5 +1,5 @@
 use ast::expr::*;
-use ast::item::{Class, Enum, Function, Impl, Item, ItemKind, Name, NamedType};
+use ast::item::{Class, Enum, Function, Impl, Item, ItemKind, Name, NamedType, Use};
 use ast::token::Operator;
 use ast::Spanned;
 
@@ -49,6 +49,7 @@ pub enum ValidationError {
         ItemKind::Enum => "enums",
         ItemKind::Impl => "impl blocks",
         ItemKind::Function => "functions",
+        ItemKind::Use => "use items",
     })]
     ForbiddenItemInImpl(ItemKind),
 }
@@ -423,6 +424,12 @@ impl Validate for Impl {
     }
 }
 
+impl Validate for Use {
+    type State = ();
+
+    fn validate(&self, _: ()) -> Result<(), ValidationError> { Ok(()) }
+}
+
 
 impl Validate for Item {
     type State = ();
@@ -433,6 +440,7 @@ impl Validate for Item {
             Item::Class(c) => c.validate(())?,
             Item::Enum(e) => e.validate(())?,
             Item::Impl(i) => i.validate(())?,
+            Item::Use(i) => i.validate(())?,
         }
         Ok(())
     }
