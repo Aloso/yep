@@ -11,7 +11,7 @@ pub enum Keyword {
     // Expressions
     Let,
     Var,
-    Case,
+    Match,
     And,
     Or,
     Not,

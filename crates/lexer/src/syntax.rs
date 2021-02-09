@@ -47,7 +47,7 @@ pub(super) enum IToken<'a> {
 pub(super) fn parse_keyword(s: &str) -> Option<Keyword> {
     Some(match s {
         "and" => Keyword::And,
-        "case" => Keyword::Case,
+        "match" => Keyword::Match,
         "class" => Keyword::Class,
         "enum" => Keyword::Enum,
         "use" => Keyword::Use,

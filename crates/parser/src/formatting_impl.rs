@@ -137,7 +137,7 @@ beauty_impl! {
     enum Expr {
         Invokable, Literal, ParenCall, MemberCall, Operation,
         ShortcircuitingOp, Assignment, TypeAscription, Lambda,
-        Block, Empty, Declaration, Case, Statement, Tuple
+        Block, Empty, Declaration, Match, Statement, Tuple
     }
 }
 
@@ -202,5 +202,5 @@ beauty_impl! {
 }
 
 beauty_impl! {
-    struct Case { expr, /* match_arms */ }
+    struct Match { expr, /* match_arms */ }
 }

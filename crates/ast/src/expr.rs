@@ -23,7 +23,7 @@ pub enum Expr {
     Empty(Empty),
 
     Declaration(Declaration),
-    Case(Case),
+    Match(Match),
 }
 
 impl Expr {
@@ -53,7 +53,7 @@ impl Expr {
             Expr::Tuple(_) => ExprKind::Tuple,
             Expr::Empty(_) => ExprKind::Empty,
             Expr::Declaration(_) => ExprKind::Declaration,
-            Expr::Case(_) => ExprKind::Case,
+            Expr::Match(_) => ExprKind::Match,
         }
     }
 }
@@ -74,7 +74,7 @@ pub enum ExprKind {
     Tuple,
     Empty,
     Declaration,
-    Case,
+    Match,
 }
 
 #[derive(Debug, Clone)]
@@ -177,7 +177,7 @@ pub struct Declaration {
 }
 
 #[derive(Debug, Clone)]
-pub struct Case {
+pub struct Match {
     pub expr: Box<Spanned<Expr>>,
     pub match_arms: Vec<MatchArm>,
 }

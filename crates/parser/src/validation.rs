@@ -134,7 +134,7 @@ impl Validate for Expr {
             Expr::Tuple(t) => t.validate(())?,
             Expr::Empty(_) => {}
             Expr::Declaration(d) => d.validate(())?,
-            Expr::Case(c) => c.validate(())?,
+            Expr::Match(c) => c.validate(())?,
         }
         Ok(())
     }
@@ -347,7 +347,7 @@ impl Validate for Declaration {
     }
 }
 
-impl Validate for Case {
+impl Validate for Match {
     type State = ();
 
     fn validate(&self, _: ()) -> Result<(), ValidationError> { todo!() }
