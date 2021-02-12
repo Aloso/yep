@@ -90,3 +90,34 @@ impl fmt::Display for Operator {
         fmt::Display::fmt(&self.0, f)
     }
 }
+
+#[cfg(feature = "fuzz")]
+impl arbitrary::Arbitrary for UpperIdent {
+    fn arbitrary(_: &mut arbitrary::Unstructured<'_>) -> arbitrary::Result<Self> {
+        Ok(UpperIdent(TinyString::from("T")))
+    }
+}
+
+#[cfg(feature = "fuzz")]
+impl arbitrary::Arbitrary for Ident {
+    fn arbitrary(_: &mut arbitrary::Unstructured<'_>) -> arbitrary::Result<Self> {
+        Ok(Ident(TinyString::from("v")))
+    }
+}
+
+#[cfg(feature = "fuzz")]
+impl arbitrary::Arbitrary for Operator {
+    fn arbitrary(u: &mut arbitrary::Unstructured<'_>) -> arbitrary::Result<Self> {
+        #[repr(u8)]
+        #[derive(arbitrary::Arbitrary)]
+        enum OpChar {
+            Add = b'+',
+            Mul = b'*',
+        }
+
+        let b = u.arbitrary::<OpChar>()? as u8 as char;
+        let mut buf = [0; 4];
+        let s = b.encode_utf8(&mut buf);
+        Ok(Operator(TinyString::from(&*s)))
+    }
+}

@@ -1,4 +1,0 @@
-fun foo() {
-    a -= +1;
-    foo(number: a) # the result
-}

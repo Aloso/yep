@@ -1,13 +1,13 @@
-use ast::token::{Ident, Operator, StringLiteral, Token, TokenData, UpperIdent};
+use ast::token::{Ident, Operator, StringLiteral, Token, UpperIdent};
 use ast::{LexError, Spanned, TextRange};
 use logos::Lexer;
 
 use super::numbers;
 use super::syntax::{parse_keyword, IToken};
 
-pub(super) fn lex<'a>(text: &'a str) -> Vec<Spanned<Token<'a>>> {
+pub(super) fn lex(text: &str) -> Vec<Spanned<Token>> {
     let mut was_word = false;
-    let mut v: Vec<Spanned<Token<'a>>> = Vec::new();
+    let mut v: Vec<Spanned<Token>> = Vec::new();
 
     for (t, span) in Lexer::<IToken>::new(text).spanned() {
         let span = TextRange::from(span);
@@ -16,45 +16,43 @@ pub(super) fn lex<'a>(text: &'a str) -> Vec<Spanned<Token<'a>>> {
             IToken::Word(word) => {
                 if word.starts_with(|c: char| c.is_ascii_lowercase()) {
                     parse_keyword(word)
-                        .map(TokenData::Keyword)
-                        .unwrap_or_else(|| TokenData::Ident(Ident::new(word)))
+                        .map(Token::Keyword)
+                        .unwrap_or_else(|| Token::Ident(Ident::new(word)))
                 } else if word.starts_with(|c: char| c.is_ascii_uppercase()) {
-                    TokenData::UpperIdent(UpperIdent::new(word))
+                    Token::UpperIdent(UpperIdent::new(word))
                 } else if word.contains(|c: char| c.is_ascii_digit()) {
-                    TokenData::Error(LexError::InvalidNum)
+                    Token::Error(LexError::InvalidNum)
                 } else {
-                    TokenData::Operator(Operator::new(word))
+                    Token::Operator(Operator::new(word))
                 }
             }
             IToken::NumberLit(input) => numbers::parse_number(input),
-            IToken::StringLit(s) => TokenData::StringLit(StringLiteral::new(s)),
-            IToken::Punct(p) => TokenData::Punct(p),
-            IToken::Error => TokenData::Error(LexError::Unexpected),
-            IToken::WS => TokenData::Error(LexError::WS),
+            IToken::StringLit(s) => Token::StringLit(StringLiteral::new(s)),
+            IToken::Punct(p) => Token::Punct(p),
+            IToken::Error => Token::Error(LexError::Unexpected),
+            IToken::WS => Token::Error(LexError::WS),
         };
-        if let TokenData::Error(LexError::WS) = data {
+        if let Token::Error(LexError::WS) = data {
             was_word = false;
         } else {
             let is_word = matches!(
                 data,
-                TokenData::NumberLit(_)
-                    | TokenData::Ident(_)
-                    | TokenData::UpperIdent(_)
-                    | TokenData::Operator(_)
-                    | TokenData::Keyword(_)
+                Token::NumberLit(_)
+                    | Token::Ident(_)
+                    | Token::UpperIdent(_)
+                    | Token::Operator(_)
+                    | Token::Keyword(_)
             );
             if was_word && is_word {
                 let prev = v.pop().unwrap();
-                v.push(Token::new(
-                    TokenData::Error(LexError::NoWS),
-                    prev.span.extend_until(span.end()),
-                ));
+                let no_ws = Token::Error(LexError::NoWS);
+                v.push(prev.span.extend_until(span.end()).embed(no_ws));
             } else {
                 was_word = is_word;
-                v.push(Token::new(data, span));
+                v.push(span.embed(data));
             }
         }
     }
-    v.push(Token::new(TokenData::EOF, text.len()..text.len()));
+    v.push(TextRange::from(text.len()..text.len()).embed(Token::EOF));
     v
 }

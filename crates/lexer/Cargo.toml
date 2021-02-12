@@ -9,6 +9,10 @@ edition = "2018"
 [dependencies]
 ast = { path = "../ast" }
 logos = "0.12.0"
+arbitrary = { version = "0.4.7", optional = true }
 
 [dev-dependencies]
 difference = "2.0"
+
+[features]
+fuzz = ["arbitrary", "ast/fuzz"]

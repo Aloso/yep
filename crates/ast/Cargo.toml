@@ -9,3 +9,7 @@ edition = "2018"
 [dependencies]
 tinystring = { path = "../tinystring" }
 thiserror = "1.0"
+arbitrary = { version = "0.4.7", features = ["derive_arbitrary"], optional = true }
+
+[features]
+fuzz = ["arbitrary"]

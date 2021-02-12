@@ -3,7 +3,7 @@ use std::iter::Peekable;
 use ast::expr::*;
 use ast::item::{Name, NamedType};
 use ast::token::{
-    Ident, Keyword, NumberLiteral, Operator, Punctuation, StringLiteral, TokenData,
+    Ident, Keyword, NumberLiteral, Operator, Punctuation, StringLiteral, Token,
     UpperIdent,
 };
 use ast::Spanned;
@@ -21,7 +21,7 @@ impl Parse for Expr {
         while let Some(part) = ExprPart::parse(lexer)? {
             parts.push(part);
             if lexer.len() == len {
-                return Err(Error::ExpectedGot2("expression", lexer.peek().data()));
+                return Err(Error::ExpectedGot2("expression", lexer.peek().clone()));
             }
             len = lexer.len();
         }
@@ -149,8 +149,8 @@ impl Parse for Invokable {
 
 impl Parse for Operator {
     fn parse(lexer: LexerMut) -> ParseResult<Self> {
-        Ok(match lexer.peek().data() {
-            TokenData::Operator(o) => Some(lexer.next().span.embed(o)),
+        Ok(match lexer.peek().clone() {
+            Token::Operator(o) => Some(lexer.next().span.embed(o)),
             _ => None,
         })
     }
@@ -230,9 +230,9 @@ impl Parse for Declaration {
 
 impl Parse for DeclKind {
     fn parse(lexer: LexerMut) -> ParseResult<Self> {
-        let decl_kind = match lexer.peek().data() {
-            TokenData::Keyword(Keyword::Let) => DeclKind::Let,
-            TokenData::Keyword(Keyword::Var) => DeclKind::Var,
+        let decl_kind = match *lexer.peek() {
+            Token::Keyword(Keyword::Let) => DeclKind::Let,
+            Token::Keyword(Keyword::Var) => DeclKind::Var,
             _ => return Ok(None),
         };
         Ok(Some(lexer.next().span.embed(decl_kind)))
@@ -263,8 +263,8 @@ impl Parse for FunCallArgument {
 
 impl Parse for StringLiteral {
     fn parse(lexer: LexerMut) -> ParseResult<Self> {
-        Ok(match lexer.peek().data() {
-            TokenData::StringLit(s) => Some(lexer.next().span.embed(s)),
+        Ok(match lexer.peek().clone() {
+            Token::StringLit(s) => Some(lexer.next().span.embed(s)),
             _ => None,
         })
     }
@@ -272,8 +272,8 @@ impl Parse for StringLiteral {
 
 impl Parse for NumberLiteral {
     fn parse(lexer: LexerMut) -> ParseResult<Self> {
-        Ok(match lexer.peek().data() {
-            TokenData::NumberLit(n) => Some(lexer.next().span.embed(n)),
+        Ok(match *lexer.peek() {
+            Token::NumberLit(n) => Some(lexer.next().span.embed(n)),
             _ => None,
         })
     }
@@ -281,8 +281,8 @@ impl Parse for NumberLiteral {
 
 impl Parse for Ident {
     fn parse(lexer: LexerMut) -> ParseResult<Self> {
-        Ok(match lexer.peek().data() {
-            TokenData::Ident(i) => Some(lexer.next().span.embed(i)),
+        Ok(match lexer.peek().clone() {
+            Token::Ident(i) => Some(lexer.next().span.embed(i)),
             _ => None,
         })
     }
@@ -290,8 +290,8 @@ impl Parse for Ident {
 
 impl Parse for UpperIdent {
     fn parse(lexer: LexerMut) -> ParseResult<Self> {
-        Ok(match lexer.peek().data() {
-            TokenData::UpperIdent(i) => Some(lexer.next().span.embed(i)),
+        Ok(match lexer.peek().clone() {
+            Token::UpperIdent(i) => Some(lexer.next().span.embed(i)),
             _ => None,
         })
     }
@@ -329,11 +329,11 @@ impl Parse for ExprPart {
     fn parse(lexer: LexerMut) -> ParseResult<Self> {
         #[allow(clippy::unnecessary_wraps)]
         fn parse_and_or_dot_equals(lexer: LexerMut) -> ParseResult<ExprPart> {
-            let part = match lexer.peek().data() {
-                TokenData::Keyword(Keyword::And) => ExprPart::And,
-                TokenData::Keyword(Keyword::Or) => ExprPart::Or,
-                TokenData::Punct(Punctuation::Dot) => ExprPart::Dot,
-                TokenData::Punct(Punctuation::Equals) => ExprPart::Equals,
+            let part = match *lexer.peek() {
+                Token::Keyword(Keyword::And) => ExprPart::And,
+                Token::Keyword(Keyword::Or) => ExprPart::Or,
+                Token::Punct(Punctuation::Dot) => ExprPart::Dot,
+                Token::Punct(Punctuation::Equals) => ExprPart::Equals,
                 _ => return Ok(None),
             };
             Ok(Some(lexer.next().span.embed(part)))

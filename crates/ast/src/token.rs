@@ -1,20 +1,14 @@
 use std::fmt;
-use std::marker::PhantomData;
 
 pub use crate::keyword::Keyword;
 pub use crate::literal::{NumberLiteral, StringLiteral};
 pub use crate::name::{Ident, Operator, UpperIdent};
 pub use crate::punct::Punctuation;
-use crate::{LexError, Spanned, TextRange};
+use crate::LexError;
 
-#[derive(Clone)]
-pub struct Token<'a> {
-    pub data: TokenData,
-    lt: PhantomData<&'a str>,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum TokenData {
+#[derive(Clone, PartialEq)]
+#[cfg_attr(feature = "fuzz", derive(arbitrary::Arbitrary))]
+pub enum Token {
     Punct(Punctuation),
     StringLit(StringLiteral),
     NumberLit(NumberLiteral),
@@ -26,79 +20,47 @@ pub enum TokenData {
     EOF,
 }
 
-impl From<Punctuation> for TokenData {
-    fn from(x: Punctuation) -> Self { TokenData::Punct(x) }
+impl From<Punctuation> for Token {
+    fn from(x: Punctuation) -> Self { Token::Punct(x) }
 }
-impl From<NumberLiteral> for TokenData {
-    fn from(x: NumberLiteral) -> Self { TokenData::NumberLit(x) }
+impl From<NumberLiteral> for Token {
+    fn from(x: NumberLiteral) -> Self { Token::NumberLit(x) }
 }
-impl From<Ident> for TokenData {
-    fn from(x: Ident) -> Self { TokenData::Ident(x) }
+impl From<Ident> for Token {
+    fn from(x: Ident) -> Self { Token::Ident(x) }
 }
-impl From<UpperIdent> for TokenData {
-    fn from(x: UpperIdent) -> Self { TokenData::UpperIdent(x) }
+impl From<UpperIdent> for Token {
+    fn from(x: UpperIdent) -> Self { Token::UpperIdent(x) }
 }
-impl From<Operator> for TokenData {
-    fn from(x: Operator) -> Self { TokenData::Operator(x) }
+impl From<Operator> for Token {
+    fn from(x: Operator) -> Self { Token::Operator(x) }
 }
-impl From<Keyword> for TokenData {
-    fn from(x: Keyword) -> Self { TokenData::Keyword(x) }
+impl From<Keyword> for Token {
+    fn from(x: Keyword) -> Self { Token::Keyword(x) }
 }
-impl From<LexError> for TokenData {
-    fn from(x: LexError) -> Self { TokenData::Error(x) }
+impl From<LexError> for Token {
+    fn from(x: LexError) -> Self { Token::Error(x) }
 }
 
-impl<'a> Token<'a> {
-    pub fn new(data: TokenData, span: impl Into<TextRange>) -> Spanned<Self> {
-        Spanned::new(Self { data, lt: PhantomData }, span.into())
-    }
-
-    pub fn data(&self) -> TokenData { self.data.clone() }
-
+impl Token {
     pub fn kind(&self) -> TokenKind {
-        match self.data {
-            TokenData::Punct(_) => TokenKind::Punct,
-            TokenData::StringLit(_) => TokenKind::StringLit,
-            TokenData::NumberLit(_) => TokenKind::NumberLit,
-            TokenData::Ident(_) => TokenKind::Ident,
-            TokenData::UpperIdent(_) => TokenKind::UpperIdent,
-            TokenData::Operator(_) => TokenKind::Operator,
-            TokenData::Keyword(_) => TokenKind::Keyword,
-            TokenData::Error(_) => TokenKind::Error,
-            TokenData::EOF => TokenKind::EOF,
+        match self {
+            Token::Punct(_) => TokenKind::Punct,
+            Token::StringLit(_) => TokenKind::StringLit,
+            Token::NumberLit(_) => TokenKind::NumberLit,
+            Token::Ident(_) => TokenKind::Ident,
+            Token::UpperIdent(_) => TokenKind::UpperIdent,
+            Token::Operator(_) => TokenKind::Operator,
+            Token::Keyword(_) => TokenKind::Keyword,
+            Token::Error(_) => TokenKind::Error,
+            Token::EOF => TokenKind::EOF,
         }
     }
 
     pub fn lex_error(&self) -> Option<LexError> {
-        match self.data {
-            TokenData::Error(e) => Some(e),
+        match *self {
+            Token::Error(e) => Some(e),
             _ => None,
-        }
-    }
-
-    pub fn debug(&self, text: &str, f: &mut fmt::Formatter) -> fmt::Result {
-        if f.alternate() {
-            match &self.data {
-                TokenData::Punct(_) => write!(f, "`{}`", text),
-                TokenData::NumberLit(n) => write!(f, "{:?}@`{}`", n, text),
-                TokenData::StringLit(_) => write!(f, "s`{}`", text),
-                TokenData::Ident(_) => write!(f, "i`{}`", text),
-                TokenData::UpperIdent(_) => write!(f, "I`{}`", text),
-                TokenData::Operator(_) => write!(f, "o`{}`", text),
-                TokenData::Keyword(_) => write!(f, "k`{}`", text),
-                TokenData::Error(e) => write!(f, "{:?}@`{}`", e, text),
-                TokenData::EOF => write!(f, "EOF"),
-            }
-        } else {
-            write!(f, "{}", text)
-        }
-    }
-
-    pub fn debug_to_string(&self, text: &str, alternate: bool) -> String {
-        if alternate {
-            format!("{:#?}", TokenFormatting { token: self, text })
-        } else {
-            format!("{:?}", TokenFormatting { token: self, text })
         }
     }
 }
@@ -116,38 +78,18 @@ pub enum TokenKind {
     EOF,
 }
 
-struct TokenFormatting<'a> {
-    token: &'a Token<'a>,
-    text: &'a str,
-}
-
-impl fmt::Debug for TokenFormatting<'_> {
+impl fmt::Debug for Token {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.token.debug(self.text, f)
-    }
-}
-
-impl fmt::Debug for Token<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt::Debug::fmt(&self.data, f)
-    }
-}
-
-impl Spanned<Token<'_>> {
-    pub fn debug(&self, text: &str, f: &mut fmt::Formatter) -> fmt::Result {
-        self.inner.debug(&text[self.span], f)?;
-        if f.alternate() {
-            write!(f, " @ {:?}", self.span)?;
-        }
-        Ok(())
-    }
-
-    pub fn debug_to_string(&self, text: &str, alternate: bool) -> String {
-        let text = &text[self.span];
-        if alternate {
-            format!("{:#?}", TokenFormatting { token: self, text })
-        } else {
-            format!("{:?}", TokenFormatting { token: self, text })
+        match self {
+            Token::Punct(p) => write!(f, "`{}`", p),
+            Token::StringLit(l) => write!(f, "s`{}`", l),
+            Token::NumberLit(l) => write!(f, "{:?}", l),
+            Token::Ident(i) => write!(f, "i`{}`", i),
+            Token::UpperIdent(i) => write!(f, "I`{}`", i),
+            Token::Operator(i) => write!(f, "o`{}`", i),
+            Token::Keyword(k) => write!(f, "k`{}`", k),
+            Token::Error(e) => write!(f, "{:?}", e),
+            Token::EOF => write!(f, "EOF"),
         }
     }
 }

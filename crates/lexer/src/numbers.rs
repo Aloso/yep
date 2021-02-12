@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use ast::token::{NumberLiteral, TokenData};
+use ast::token::{NumberLiteral, Token};
 use ast::LexError;
 
 trait Int: Copy + 'static {
@@ -162,30 +162,30 @@ pub(crate) fn dec(input: &str) -> Result<NumberLiteral, LexError> {
     int_with_radix(input, 0, 10)
 }
 
-pub(super) fn parse_number(input: &str) -> TokenData {
+pub(super) fn parse_number(input: &str) -> Token {
     if input.starts_with('.') {
-        into_token_data(leading_dot(input))
+        into_token(leading_dot(input))
     } else {
         let without_sign =
             input.strip_prefix(|c: char| c == '+' || c == '-').unwrap_or(input);
         if without_sign.starts_with('0') {
             if let Some(x) = without_sign.chars().nth(1) {
                 match x {
-                    'x' | 'X' => return into_token_data(hex(input)),
-                    'b' | 'B' => return into_token_data(bin(input)),
-                    'o' | 'O' => return into_token_data(oct(input)),
+                    'x' | 'X' => return into_token(hex(input)),
+                    'b' | 'B' => return into_token(bin(input)),
+                    'o' | 'O' => return into_token(oct(input)),
                     _ => {}
                 }
             }
         }
         if without_sign.contains(|c: char| c == '.' || c == 'e' || c == 'E') {
-            into_token_data(float(input))
+            into_token(float(input))
         } else {
-            into_token_data(dec(input))
+            into_token(dec(input))
         }
     }
 }
 
-fn into_token_data(result: Result<NumberLiteral, LexError>) -> TokenData {
-    result.map(TokenData::NumberLit).unwrap_or_else(TokenData::Error)
+fn into_token(result: Result<NumberLiteral, LexError>) -> Token {
+    result.map(Token::NumberLit).unwrap_or_else(Token::Error)
 }

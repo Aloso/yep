@@ -29,7 +29,7 @@ fn main() {
 
         print!("Lexed program:  ");
         let program = lexer::lex(&text);
-        print_program(&program);
+        print_program(&program, &text);
         println!("\n");
 
         match parser::parse(program.tokens()) {
@@ -40,9 +40,9 @@ fn main() {
             }
             Err(error) => {
                 if let parser::Error::RemainingTokens(t) = error {
-                    let rest = program.with_lifeless_tokens(&t);
+                    let rest = Program::from(t);
                     print!("Expected item, found:  ");
-                    print_program(&rest);
+                    print_program(&rest, &text);
                     println!("\n");
                 } else {
                     println!("{}\n", error);
@@ -52,7 +52,7 @@ fn main() {
     }
 }
 
-fn print_program(program: &Program) {
+fn print_program(program: &Program, text: &str) {
     for k in program.tokens() {
         match k.kind() {
             TokenKind::Punct => print!("{}", GRAY),
@@ -65,7 +65,7 @@ fn print_program(program: &Program) {
             TokenKind::Error => print!("{}", RED),
             TokenKind::EOF => print!("{}", RED),
         }
-        print!("{}{} ", k.debug_to_string(program.text(), false), RESET);
+        print!("{}{} ", &text[k.span], RESET);
     }
     print!("{}", RESET);
 }

@@ -7,9 +7,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "739f4a8db6605981345c5654f3a85b056ce52f37a39d34da03f25bf2151ea16e"
 
 [[package]]
+name = "arbitrary"
+version = "0.4.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "db55d72333851e17d572bec876e390cd3b11eb1ef53ae821dd9f3b653d2b4569"
+dependencies = [
+ "derive_arbitrary",
+]
+
+[[package]]
 name = "ast"
 version = "0.1.0"
 dependencies = [
+ "arbitrary",
  "thiserror",
  "tinystring",
 ]
@@ -25,6 +35,17 @@ name = "cfg-if"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
+
+[[package]]
+name = "derive_arbitrary"
+version = "0.4.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b1a012b5e473dc912f0db0546a1c9c6a194ce8494feb66fa0237160926f9e0e6"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
 
 [[package]]
 name = "difference"
@@ -59,6 +80,7 @@ dependencies = [
 name = "lexer"
 version = "0.1.0"
 dependencies = [
+ "arbitrary",
  "ast",
  "difference",
  "logos",

@@ -1,4 +1,0 @@
-enum Option[T] {
-    some(value T),
-    none,
-}

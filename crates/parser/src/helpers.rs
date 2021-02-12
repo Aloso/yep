@@ -1,5 +1,5 @@
 use ast::item::{GenericParam, TypeArgument};
-use ast::token::{Keyword, Punctuation, TokenData};
+use ast::token::{Keyword, Punctuation, Token};
 use ast::{Spanned, SpannedList, TextRange};
 
 use super::{Error, LexerMut, Parse, ParseResult};
@@ -17,8 +17,8 @@ macro_rules! uoret {
 
 impl Parse for Punctuation {
     fn parse(lexer: LexerMut) -> ParseResult<Self> {
-        Ok(match lexer.peek().data() {
-            TokenData::Punct(p) => Some(lexer.next().span.embed(p)),
+        Ok(match *lexer.peek() {
+            Token::Punct(p) => Some(lexer.next().span.embed(p)),
             _ => None,
         })
     }
@@ -26,8 +26,8 @@ impl Parse for Punctuation {
 
 impl Parse for Keyword {
     fn parse(lexer: LexerMut) -> ParseResult<Self> {
-        Ok(match lexer.peek().data() {
-            TokenData::Keyword(kw) => Some(lexer.next().span.embed(kw)),
+        Ok(match *lexer.peek() {
+            Token::Keyword(kw) => Some(lexer.next().span.embed(kw)),
             _ => None,
         })
     }
@@ -105,7 +105,7 @@ pub(super) fn or6<T>(
 pub(super) fn vec_separated<T>(
     lexer: LexerMut,
     mut f: impl FnMut(LexerMut) -> ParseResult<T>,
-    separator: impl Into<TokenData> + Clone,
+    separator: impl Into<Token> + Clone,
 ) -> ParseResult<SpannedList<T>> {
     let mut lexer_clone = lexer.clone();
     let first = uoret!(f(&mut lexer_clone)?);
@@ -127,8 +127,8 @@ pub(super) fn vec_separated<T>(
 
 pub(super) fn enclosed<T>(
     parser: impl FnOnce(LexerMut) -> ParseResult<T>,
-    left: impl Into<TokenData> + Clone,
-    right: impl Into<TokenData> + Clone,
+    left: impl Into<Token> + Clone,
+    right: impl Into<Token> + Clone,
     on_error: impl FnOnce() -> Error,
 ) -> impl FnOnce(LexerMut) -> ParseResult<T> {
     move |lexer| {
@@ -145,16 +145,16 @@ pub(super) fn enclosed<T>(
 
 pub(super) fn enclose_multiple<T>(
     parser: impl Fn(LexerMut) -> ParseResult<T> + Clone,
-    left: impl Into<TokenData> + Clone,
-    separator: impl Into<TokenData> + Clone,
-    right: impl Into<TokenData> + Clone,
+    left: impl Into<Token> + Clone,
+    separator: impl Into<Token> + Clone,
+    right: impl Into<Token> + Clone,
     trailing_separator: bool,
 ) -> impl FnOnce(LexerMut) -> ParseResult<SpannedList<T>> {
     let parser_inner = move |lexer: LexerMut| {
         let items = vec_separated(lexer, parser.clone(), separator.clone())?;
         match items {
             Some(items) => {
-                if trailing_separator && lexer.peek().data() == separator.into() {
+                if trailing_separator && *lexer.peek() == separator.into() {
                     lexer.next();
                 }
                 Ok(Some(items))
@@ -169,9 +169,9 @@ pub(super) fn enclose_multiple<T>(
 
 pub(super) fn enclose_multiple_expect<T>(
     parser: impl Fn(LexerMut) -> ParseResult<T> + Clone,
-    left: impl Into<TokenData> + Clone,
-    separator: impl Into<TokenData> + Clone,
-    right: impl Into<TokenData> + Clone,
+    left: impl Into<Token> + Clone,
+    separator: impl Into<Token> + Clone,
+    right: impl Into<Token> + Clone,
     trailing_separator: bool,
 ) -> impl FnOnce(LexerMut) -> Result<Spanned<SpannedList<T>>, Error> {
     move |lexer| {
@@ -179,7 +179,7 @@ pub(super) fn enclose_multiple_expect<T>(
             enclose_multiple(parser, left.clone(), separator, right, trailing_separator);
         match parser(lexer)? {
             Some(res) => Ok(res),
-            None => Err(Error::ExpectedGot(left.into(), lexer.peek().data())),
+            None => Err(Error::ExpectedGot(left.into(), lexer.peek().clone())),
         }
     }
 }

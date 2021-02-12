@@ -1,20 +1,20 @@
 [
-    InvalidNum@`+-0` @ 0..3
-    InvalidNum@`--0` @ 4..7
-    InvalidNum@`0x_` @ 8..11
-    InvalidCharInNum('G')@`0xF_G` @ 12..17
-    InvalidCharInNum('2')@`0b012` @ 18..23
-    InvalidNum@`_1` @ 24..26
-    InvalidNum@`1e` @ 27..29
-    InvalidNum@`1e__` @ 30..34
-    InvalidCharInNum('+')@`1e_+1` @ 35..40
-    NumberOverflow@`.12345e2345` @ 41..52
-    InvalidNum@`0f.1` @ 53..57
+    InvalidNum @ 0..3
+    InvalidNum @ 4..7
+    InvalidNum @ 8..11
+    InvalidCharInNum('G') @ 12..17
+    InvalidCharInNum('2') @ 18..23
+    InvalidNum @ 24..26
+    InvalidNum @ 27..29
+    InvalidNum @ 30..34
+    InvalidCharInNum('+') @ 35..40
+    NumberOverflow @ 41..52
+    InvalidNum @ 53..57
     `_` @ 104..105
-    Float(0.1)@`.1` @ 105..107
-    NoWS@`-.1` @ 108..111
-    Int(0)@`0` @ 112..113
+    Float(0.1) @ 105..107
+    NoWS @ 108..111
+    Int(0) @ 112..113
     `.` @ 113..114
-    InvalidNum@`_1` @ 114..116
+    InvalidNum @ 114..116
     EOF @ 116..116
 ]

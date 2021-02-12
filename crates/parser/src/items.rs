@@ -1,6 +1,6 @@
 use ast::expr::{Block, Expr};
 use ast::item::*;
-use ast::token::{Ident, Keyword, Punctuation, TokenData, UpperIdent};
+use ast::token::{Ident, Keyword, Punctuation, Token, UpperIdent};
 
 use crate::uoret;
 
@@ -95,10 +95,10 @@ impl Parse for FunArgument {
 
 impl Parse for Name {
     fn parse(lexer: LexerMut) -> ParseResult<Self> {
-        let fun_name = match lexer.peek().data() {
-            TokenData::Ident(name) => Name::Ident(name),
-            TokenData::UpperIdent(name) => Name::Type(name),
-            TokenData::Operator(name) => Name::Operator(name),
+        let fun_name = match lexer.peek() {
+            Token::Ident(name) => Name::Ident(name.clone()),
+            Token::UpperIdent(name) => Name::Type(name.clone()),
+            Token::Operator(name) => Name::Operator(name.clone()),
             _ => return Ok(None),
         };
         Ok(Some(lexer.next().span.embed(fun_name)))

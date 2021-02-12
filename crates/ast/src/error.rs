@@ -2,9 +2,9 @@
 pub enum LexError {
     #[error("Unexpected token")]
     Unexpected,
-    #[error("No whitespace")]
+    #[error("Missing whitespace")]
     NoWS,
-    #[error("Whitespace")]
+    #[error("Unexpected whitespace")]
     WS,
 
     #[error("Invalid number token")]
@@ -13,4 +13,11 @@ pub enum LexError {
     NumberOverflow,
     #[error("Invalid char {0:?} in number literal")]
     InvalidCharInNum(char),
+}
+
+#[cfg(feature = "fuzz")]
+impl arbitrary::Arbitrary for LexError {
+    fn arbitrary(_: &mut arbitrary::Unstructured<'_>) -> arbitrary::Result<Self> {
+        Ok(LexError::WS)
+    }
 }
