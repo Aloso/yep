@@ -1,0 +1,10 @@
+fun f() Unit {
+    5 + 5 Int match {};
+    5 or 5 match {};
+    a.b match {};
+    a.b() match {};
+    x = a match {
+        let x: 5,
+        let x: 3,
+    };
+}

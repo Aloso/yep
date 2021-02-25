@@ -1,5 +1,6 @@
 use ast::expr::*;
 use ast::item::{Class, Enum, Function, Impl, Item, ItemKind, Name, NamedType, Use};
+use ast::pattern::Pattern;
 use ast::token::Operator;
 use ast::Spanned;
 
@@ -350,7 +351,28 @@ impl Validate for Declaration {
 impl Validate for Match {
     type State = ();
 
-    fn validate(&self, _: ()) -> Result<(), ValidationError> { todo!() }
+    fn validate(&self, _: ()) -> Result<(), ValidationError> {
+        self.expr.validate(ExprPlaceType::Other)?;
+        for arm in self.match_arms.iter() {
+            arm.inner.validate(())?;
+        }
+        Ok(())
+    }
+}
+
+impl Validate for MatchArm {
+    type State = ();
+
+    fn validate(&self, _: ()) -> Result<(), ValidationError> {
+        self.pattern.validate(())?;
+        self.expr.validate(ExprPlaceType::Other)
+    }
+}
+
+impl Validate for Pattern {
+    type State = ();
+
+    fn validate(&self, _: ()) -> Result<(), ValidationError> { Ok(()) }
 }
 
 

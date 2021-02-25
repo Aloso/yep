@@ -1,0 +1,6 @@
+fun f() Unit {
+    let a = ();
+    let b = (1);
+    let c = (2, 3);
+    let d = (4, 5,)(1);
+}

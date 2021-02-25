@@ -434,7 +434,6 @@ fun f(x Int) Unit {}
 
 # TODO
 
-- `fallthrough` and `defer` statements
+- `defer` statement
 - parse closure types, with `noescape` keyword
-- allow `?` in names, because this special case is confusing
 - Parse attributes

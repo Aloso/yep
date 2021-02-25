@@ -1,0 +1,145 @@
+[
+    Function(
+        Function {
+            name: Ident f @ 4..5,
+            generics: [] @ 0..0,
+            args: [] @ 5..7,
+            return_ty: Some(
+                NamedType {
+                    name: UpperIdent Unit @ 8..12,
+                    args: [] @ 0..0,
+                } @ 8..12,
+            ),
+            body: Some(
+                Block {
+                    exprs: [
+                        Operation(
+                            Operation {
+                                operator: Operator +,
+                                lhs: Literal(
+                                    Int(5),
+                                ) @ 19..20,
+                                rhs: Match(
+                                    Match {
+                                        expr: TypeAscription(
+                                            TypeAscription {
+                                                expr: Literal(
+                                                    Int(5),
+                                                ) @ 23..24,
+                                                ty: NamedType {
+                                                    name: UpperIdent Int @ 25..28,
+                                                    args: [] @ 0..0,
+                                                },
+                                            },
+                                        ) @ 23..28,
+                                        match_arms: [],
+                                    },
+                                ) @ 23..37,
+                            },
+                        ) @ 19..37,
+                        ShortcircuitingOp(
+                            ScOperation {
+                                operator: Or,
+                                lhs: Literal(
+                                    Int(5),
+                                ) @ 43..44,
+                                rhs: Match(
+                                    Match {
+                                        expr: Literal(
+                                            Int(5),
+                                        ) @ 48..49,
+                                        match_arms: [],
+                                    },
+                                ) @ 48..58,
+                            },
+                        ) @ 43..58,
+                        Match(
+                            Match {
+                                expr: MemberCall(
+                                    MemberCall {
+                                        receiver: Invokable(
+                                            Invokable {
+                                                name: Ident a @ 64..65,
+                                                generics: [] @ 0..0,
+                                            },
+                                        ) @ 64..65,
+                                        member: Invokable {
+                                            name: Ident b @ 66..67,
+                                            generics: [] @ 0..0,
+                                        },
+                                    },
+                                ) @ 64..67,
+                                match_arms: [],
+                            },
+                        ) @ 64..76,
+                        Match(
+                            Match {
+                                expr: ParenCall(
+                                    ParenCall {
+                                        receiver: MemberCall(
+                                            MemberCall {
+                                                receiver: Invokable(
+                                                    Invokable {
+                                                        name: Ident a @ 82..83,
+                                                        generics: [] @ 0..0,
+                                                    },
+                                                ) @ 82..83,
+                                                member: Invokable {
+                                                    name: Ident b @ 84..85,
+                                                    generics: [] @ 0..0,
+                                                },
+                                            },
+                                        ) @ 82..85,
+                                        args: Some(
+                                            [],
+                                        ),
+                                    },
+                                ) @ 82..87,
+                                match_arms: [],
+                            },
+                        ) @ 82..96,
+                        Assignment(
+                            Assignment {
+                                lhs: Invokable(
+                                    Invokable {
+                                        name: Ident x @ 102..103,
+                                        generics: [] @ 0..0,
+                                    },
+                                ) @ 102..103,
+                                rhs: Match(
+                                    Match {
+                                        expr: Invokable(
+                                            Invokable {
+                                                name: Ident a @ 106..107,
+                                                generics: [] @ 0..0,
+                                            },
+                                        ) @ 106..107,
+                                        match_arms: [
+                                            MatchArm {
+                                                pattern: Binding(
+                                                    Ident x,
+                                                ) @ 124..129,
+                                                expr: Literal(
+                                                    Int(5),
+                                                ) @ 131..132,
+                                            } @ 124..132,
+                                            MatchArm {
+                                                pattern: Binding(
+                                                    Ident x,
+                                                ) @ 142..147,
+                                                expr: Literal(
+                                                    Int(3),
+                                                ) @ 149..150,
+                                            } @ 142..150,
+                                        ],
+                                    },
+                                ) @ 106..157,
+                            },
+                        ) @ 102..157,
+                    ],
+                    ends_with_semicolon: true,
+                } @ 13..160,
+            ),
+        },
+    ) @ 0..160,
+]

@@ -2,6 +2,7 @@ use std::iter::Peekable;
 
 use ast::expr::*;
 use ast::item::{Name, NamedType};
+use ast::pattern::Pattern;
 use ast::token::{
     Ident, Keyword, NumberLiteral, Operator, Punctuation, StringLiteral, Token,
     UpperIdent,
@@ -16,6 +17,10 @@ use super::{Error, LexerMut, Parse, ParseResult};
 impl Parse for Expr {
     fn parse(lexer: LexerMut) -> ParseResult<Self> {
         let mut parts = Vec::new();
+
+        if let Some(d) = Declaration::parse(lexer)? {
+            return Ok(Some(d.span.embed(Expr::Declaration(d.inner))));
+        }
 
         let mut len = lexer.len();
         while let Some(part) = ExprPart::parse(lexer)? {
@@ -35,9 +40,11 @@ impl Parse for Expr {
                 ExprPart::Lambda(o) => Expr::Lambda(o),
                 ExprPart::Block(o) => Expr::Block(o),
                 ExprPart::Parens(o) => Expr::Tuple(o),
-                ExprPart::And | ExprPart::Or | ExprPart::Dot | ExprPart::Equals => {
-                    return Ok(None)
-                }
+                ExprPart::And
+                | ExprPart::Or
+                | ExprPart::Dot
+                | ExprPart::Equals
+                | ExprPart::Match(_) => return Ok(None),
             };
             Some(span.embed(expr_data))
         } else {
@@ -54,15 +61,16 @@ fn pratt_parser(
 ) -> Result<Spanned<Expr>, Error> {
     fn postfix_binding_power(op: &ExprPart) -> Option<(u8, ())> {
         match op.kind() {
-            ExprPartKind::InvokableType => Some((11, ())),
-            ExprPartKind::Parens => Some((9, ())),
+            ExprPartKind::InvokableType => Some((13, ())),
+            ExprPartKind::Parens => Some((11, ())),
+            ExprPartKind::Match => Some((9, ())),
             _ => None,
         }
     }
 
     fn infix_binding_power(op: &ExprPart) -> Option<(u8, u8)> {
         match op.kind() {
-            ExprPartKind::Dot => Some((13, 14)),
+            ExprPartKind::Dot => Some((15, 16)),
             ExprPartKind::InvokableOperator => Some((7, 8)),
             ExprPartKind::And => Some((5, 6)),
             ExprPartKind::Or => Some((3, 4)),
@@ -105,6 +113,10 @@ fn pratt_parser(
                         (t, _) => panic!("Unexpected token {:?}", t),
                     }
                 }
+                ExprPart::Match(match_body) => Expr::Match(Match {
+                    expr: Box::new(lhs),
+                    match_arms: match_body.arms,
+                }),
                 t => panic!("Unexpected token {:?}", t),
             };
             lhs = lhs_span.merge(op.span).embed(lhs_data);
@@ -179,13 +191,31 @@ impl Parse for Block {
     fn parse(lexer: LexerMut) -> ParseResult<Self> {
         let span1 = uoret!(lexer.eat(Punctuation::OpenBrace));
 
-        let exprs = vec_separated(lexer, Expr::parse, Punctuation::Semicolon)?
-            .unwrap_or_default()
-            .inner;
-
-        let ends_with_semicolon = lexer.eat(Punctuation::Semicolon).is_some();
-
+        let first = match Expr::parse(lexer)? {
+            Some(first) => first,
+            None => {
+                let span2 = lexer.expect(Punctuation::CloseBrace)?;
+                return Ok(Some(span1.merge(span2).embed(Block {
+                    exprs: Default::default(),
+                    ends_with_semicolon: false,
+                })));
+            }
+        };
+        let mut exprs = vec![first];
+        let mut ends_with_semicolon = false;
+        loop {
+            if lexer.eat(Punctuation::Semicolon).is_some() {
+                if let Some(next) = Expr::parse(lexer)? {
+                    exprs.push(next);
+                    continue;
+                }
+                ends_with_semicolon = true;
+            }
+            break;
+        }
         let span2 = lexer.expect(Punctuation::CloseBrace)?;
+        let exprs = exprs.into_boxed_slice();
+
         Ok(Some(span1.merge(span2).embed(Block { exprs, ends_with_semicolon })))
     }
 }
@@ -297,6 +327,31 @@ impl Parse for UpperIdent {
     }
 }
 
+impl Parse for MatchBody {
+    fn parse(lexer: LexerMut) -> ParseResult<Self> {
+        let match_kw = uoret!(lexer.eat(Keyword::Match));
+        let arms = enclose_multiple_expect(
+            MatchArm::parse,
+            Punctuation::OpenBrace,
+            Punctuation::Comma,
+            Punctuation::CloseBrace,
+            true,
+        )(lexer)?;
+        let span = match_kw.merge(arms.span);
+        Ok(Some(span.embed(MatchBody { arms: arms.inner })))
+    }
+}
+
+impl Parse for MatchArm {
+    fn parse(lexer: LexerMut) -> ParseResult<Self> {
+        let pattern = uoret!(Pattern::parse(lexer)?);
+        lexer.expect(Punctuation::Colon)?;
+        let expr = Expr::parse_expect(lexer, "expression")?;
+        let span = pattern.span.merge(expr.span);
+        Ok(Some(span.embed(MatchArm { pattern, expr })))
+    }
+}
+
 #[derive(Debug, Clone)]
 pub(super) enum ExprPart {
     Literal(Literal),
@@ -304,6 +359,7 @@ pub(super) enum ExprPart {
     Lambda(Lambda),
     Block(Block),
     Parens(Parens),
+    Match(MatchBody),
     And,
     Or,
     Dot,
@@ -319,6 +375,7 @@ pub(super) enum ExprPartKind {
     Lambda,
     Block,
     Parens,
+    Match,
     And,
     Or,
     Dot,
@@ -339,12 +396,13 @@ impl Parse for ExprPart {
             Ok(Some(lexer.next().span.embed(part)))
         }
 
-        or6(
+        or7(
             map(Literal::parse, ExprPart::Literal),
             map(Invokable::parse, ExprPart::Invokable),
             map(Lambda::parse, ExprPart::Lambda),
             map(Block::parse, ExprPart::Block),
             map(Parens::parse, ExprPart::Parens),
+            map(MatchBody::parse, ExprPart::Match),
             parse_and_or_dot_equals,
         )(lexer)
     }
@@ -363,6 +421,7 @@ impl ExprPart {
             ExprPart::Lambda(_) => ExprPartKind::Lambda,
             ExprPart::Block(_) => ExprPartKind::Block,
             ExprPart::Parens(_) => ExprPartKind::Parens,
+            ExprPart::Match(_) => ExprPartKind::Match,
             ExprPart::And => ExprPartKind::And,
             ExprPart::Or => ExprPartKind::Or,
             ExprPart::Dot => ExprPartKind::Dot,
@@ -377,6 +436,7 @@ impl ExprPart {
             ExprPart::Lambda(l) => Expr::Lambda(l),
             ExprPart::Block(b) => Expr::Block(b),
             ExprPart::Parens(p) => Expr::Tuple(p),
+            ExprPart::Match(_) => return Err(Error::ExpectedGot4("operand", "`match`")),
             ExprPart::And => return Err(Error::ExpectedGot4("operand", "`and`")),
             ExprPart::Or => return Err(Error::ExpectedGot4("operand", "`or`")),
             ExprPart::Dot => return Err(Error::ExpectedGot4("operand", "`.`")),
@@ -396,6 +456,8 @@ impl ExprPart {
             },
 
             ExprPart::And | ExprPart::Or => validate_operand(lhs),
+
+            ExprPart::Match(_) => validate_operand(lhs),
 
             ExprPart::Lambda(l) => {
                 Err(Error::ExpectedGot3("operator", Expr::Lambda(l.clone())))

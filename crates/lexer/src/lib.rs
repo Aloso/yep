@@ -35,7 +35,7 @@ impl Program {
 
     pub fn no_eof(&mut self) {
         match self.tokens.pop() {
-            Some(t) if *t != Token::EOF => self.tokens.push(t),
+            Some(t) if *t != Token::Eof => self.tokens.push(t),
             _ => {}
         }
     }
@@ -84,7 +84,7 @@ impl fmt::Display for Program {
                 Token::Operator(o) => write!(f, "{}", o)?,
                 Token::Keyword(k) => write!(f, "{}", k)?,
                 Token::Error(e) => write!(f, "{}", e)?,
-                Token::EOF => write!(f, "EOF")?,
+                Token::Eof => write!(f, "EOF")?,
             }
         }
         Ok(())

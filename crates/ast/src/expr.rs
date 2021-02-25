@@ -179,7 +179,7 @@ pub struct Declaration {
 #[derive(Debug, Clone)]
 pub struct Match {
     pub expr: Box<Spanned<Expr>>,
-    pub match_arms: Vec<MatchArm>,
+    pub match_arms: SpannedList<MatchArm>,
 }
 
 #[derive(Debug, Clone)]
@@ -202,6 +202,11 @@ pub struct LambdaArgument {
 
 #[derive(Debug, Clone)]
 pub struct MatchArm {
-    pub pattern: Pattern,
-    pub expr: Expr,
+    pub pattern: Spanned<Pattern>,
+    pub expr: Spanned<Expr>,
+}
+
+#[derive(Debug, Clone)]
+pub struct MatchBody {
+    pub arms: SpannedList<MatchArm>,
 }

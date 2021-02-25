@@ -69,7 +69,7 @@ impl<'a> Lexer<'a> {
 
     fn finish(&mut self) -> Result<(), Error> {
         if self.tokens.is_empty()
-            || (self.tokens.len() == 1 && *self.tokens[0] == Token::EOF)
+            || (self.tokens.len() == 1 && *self.tokens[0] == Token::Eof)
         {
             Ok(())
         } else {

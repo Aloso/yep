@@ -102,6 +102,18 @@ pub(super) fn or6<T>(
     or2(or3(f1, f2, f3), or3(f4, f5, f6))
 }
 
+pub(super) fn or7<T>(
+    f1: impl FnOnce(LexerMut) -> ParseResult<T>,
+    f2: impl FnOnce(LexerMut) -> ParseResult<T>,
+    f3: impl FnOnce(LexerMut) -> ParseResult<T>,
+    f4: impl FnOnce(LexerMut) -> ParseResult<T>,
+    f5: impl FnOnce(LexerMut) -> ParseResult<T>,
+    f6: impl FnOnce(LexerMut) -> ParseResult<T>,
+    f7: impl FnOnce(LexerMut) -> ParseResult<T>,
+) -> impl FnOnce(LexerMut) -> ParseResult<T> {
+    or3(or3(f1, f2, f3), or3(f4, f5, f6), f7)
+}
+
 pub(super) fn vec_separated<T>(
     lexer: LexerMut,
     mut f: impl FnMut(LexerMut) -> ParseResult<T>,

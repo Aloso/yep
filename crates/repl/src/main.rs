@@ -63,7 +63,7 @@ fn print_program(program: &Program, text: &str) {
             TokenKind::Operator => print!("{}", PURPLE),
             TokenKind::Keyword => print!("{}", BLUE),
             TokenKind::Error => print!("{}", RED),
-            TokenKind::EOF => print!("{}", RED),
+            TokenKind::Eof => print!("{}", RED),
         }
         print!("{}{} ", &text[k.span], RESET);
     }

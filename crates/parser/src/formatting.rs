@@ -11,14 +11,14 @@ pub struct Beauty {
 impl Beauty {
     pub(super) fn kv(key: &'static str, value: Beauty) -> Self {
         let num = value.num;
-        let data = BeautyData::KV { key, value: Box::new(value) };
+        let data = BeautyData::Kv { key, value: Box::new(value) };
         Beauty { data, num }
     }
 
     pub(super) fn kvs(key: &'static str, values: Vec<Beauty>) -> Self {
         let value = Beauty::list(values);
         let num = value.num;
-        let data = BeautyData::KV { key, value: Box::new(value) };
+        let data = BeautyData::Kv { key, value: Box::new(value) };
         Beauty { data, num }
     }
 
@@ -41,7 +41,7 @@ pub(super) enum BeautyData {
     String(StringLiteral),
     Number(NumberLiteral),
     Name(TinyString),
-    KV { key: &'static str, value: Box<Beauty> },
+    Kv { key: &'static str, value: Box<Beauty> },
     Empty,
 }
 
@@ -86,7 +86,7 @@ pub trait ToBeauty {
                     NumberLiteral::Float(x) => buf.push_str(&format!("Float: {}", x)),
                 },
                 BeautyData::Name(i) => buf.push_str(&**i),
-                BeautyData::KV { key, value } => {
+                BeautyData::Kv { key, value } => {
                     if b.num == 1 {
                         buf.push_str(key);
                         buf.push_str(": ");

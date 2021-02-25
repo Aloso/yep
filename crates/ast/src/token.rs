@@ -17,7 +17,7 @@ pub enum Token {
     Operator(Operator),
     Keyword(Keyword),
     Error(LexError),
-    EOF,
+    Eof,
 }
 
 impl From<Punctuation> for Token {
@@ -53,7 +53,7 @@ impl Token {
             Token::Operator(_) => TokenKind::Operator,
             Token::Keyword(_) => TokenKind::Keyword,
             Token::Error(_) => TokenKind::Error,
-            Token::EOF => TokenKind::EOF,
+            Token::Eof => TokenKind::Eof,
         }
     }
 
@@ -75,7 +75,7 @@ pub enum TokenKind {
     Operator,
     Keyword,
     Error,
-    EOF,
+    Eof,
 }
 
 impl fmt::Debug for Token {
@@ -89,7 +89,7 @@ impl fmt::Debug for Token {
             Token::Operator(i) => write!(f, "o`{}`", i),
             Token::Keyword(k) => write!(f, "k`{}`", k),
             Token::Error(e) => write!(f, "{:?}", e),
-            Token::EOF => write!(f, "EOF"),
+            Token::Eof => write!(f, "EOF"),
         }
     }
 }

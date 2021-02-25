@@ -1,0 +1,113 @@
+[
+    Function(
+        Function {
+            name: Ident f @ 4..5,
+            generics: [] @ 0..0,
+            args: [] @ 5..7,
+            return_ty: Some(
+                NamedType {
+                    name: UpperIdent Unit @ 8..12,
+                    args: [] @ 0..0,
+                } @ 8..12,
+            ),
+            body: Some(
+                Block {
+                    exprs: [
+                        Declaration(
+                            Declaration {
+                                decl_kind: Let,
+                                name: Ident a @ 23..24,
+                                value: Tuple(
+                                    Parens {
+                                        exprs: [],
+                                    },
+                                ) @ 27..29,
+                            },
+                        ) @ 19..29,
+                        Declaration(
+                            Declaration {
+                                decl_kind: Let,
+                                name: Ident b @ 39..40,
+                                value: Tuple(
+                                    Parens {
+                                        exprs: [
+                                            FunCallArgument {
+                                                name: None,
+                                                expr: Literal(
+                                                    Int(1),
+                                                ) @ 44..45,
+                                            } @ 44..45,
+                                        ],
+                                    },
+                                ) @ 43..46,
+                            },
+                        ) @ 35..46,
+                        Declaration(
+                            Declaration {
+                                decl_kind: Let,
+                                name: Ident c @ 56..57,
+                                value: Tuple(
+                                    Parens {
+                                        exprs: [
+                                            FunCallArgument {
+                                                name: None,
+                                                expr: Literal(
+                                                    Int(2),
+                                                ) @ 61..62,
+                                            } @ 61..62,
+                                            FunCallArgument {
+                                                name: None,
+                                                expr: Literal(
+                                                    Int(3),
+                                                ) @ 64..65,
+                                            } @ 64..65,
+                                        ],
+                                    },
+                                ) @ 60..66,
+                            },
+                        ) @ 52..66,
+                        Declaration(
+                            Declaration {
+                                decl_kind: Let,
+                                name: Ident d @ 76..77,
+                                value: ParenCall(
+                                    ParenCall {
+                                        receiver: Tuple(
+                                            Parens {
+                                                exprs: [
+                                                    FunCallArgument {
+                                                        name: None,
+                                                        expr: Literal(
+                                                            Int(4),
+                                                        ) @ 81..82,
+                                                    } @ 81..82,
+                                                    FunCallArgument {
+                                                        name: None,
+                                                        expr: Literal(
+                                                            Int(5),
+                                                        ) @ 84..85,
+                                                    } @ 84..85,
+                                                ],
+                                            },
+                                        ) @ 80..87,
+                                        args: Some(
+                                            [
+                                                FunCallArgument {
+                                                    name: None,
+                                                    expr: Literal(
+                                                        Int(1),
+                                                    ) @ 88..89,
+                                                } @ 88..89,
+                                            ],
+                                        ),
+                                    },
+                                ) @ 80..90,
+                            },
+                        ) @ 72..90,
+                    ],
+                    ends_with_semicolon: true,
+                } @ 13..93,
+            ),
+        },
+    ) @ 0..93,
+]

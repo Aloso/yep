@@ -5,7 +5,7 @@ use logos::Logos;
 #[derive(Logos)]
 pub(super) enum IToken<'a> {
     #[regex(r"([ \t\n\f]+|#.*)+")]
-    WS,
+    Ws,
 
     #[token(".", |_| Punctuation::Dot)]
     #[token(",", |_| Punctuation::Comma)]
@@ -14,7 +14,6 @@ pub(super) enum IToken<'a> {
     #[token("=", |_| Punctuation::Equals)]
     #[token("&", |_| Punctuation::And)]
     #[token("|", |_| Punctuation::Pipe)]
-    #[token("?", |_| Punctuation::QuestionMark)]
     #[token("\\", |_| Punctuation::Backslash)]
     #[token("@", |_| Punctuation::At)]
     #[token("_", |_| Punctuation::Underscore)]
@@ -27,16 +26,16 @@ pub(super) enum IToken<'a> {
     Punct(Punctuation),
 
     #[regex(
-        r"[+-]?\d[a-zA-Z_+\-*/%~<>=!0-9]*(\.\d[a-zA-Z_+\-*/%~<>=!0-9]*)?",
+        r"[+-]?\d[a-zA-Z_+\-*/%~<>=!0-9]*(\.\d[a-zA-Z_+\-*/%~<>=!?0-9]*)?",
         priority = 2
     )]
-    #[regex(r"\.\d[a-zA-Z_+\-*/%~<>=!0-9]*")]
+    #[regex(r"\.\d[a-zA-Z_+\-*/%~<>=!?0-9]*")]
     NumberLit(&'a str),
 
     #[regex(r#""([^"\\]|\\.)*""#)]
     StringLit(&'a str),
 
-    #[regex(r"[a-zA-Z_+\-*/%~<>=!][a-zA-Z_+\-*/%~<>=!0-9]*", priority = 1)]
+    #[regex(r"[a-zA-Z_+\-*/%~<>=!?][a-zA-Z_+\-*/%~<>=!?0-9]*", priority = 1)]
     Word(&'a str),
 
     #[error]
